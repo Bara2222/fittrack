@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}Detail tréninku{% endblock %}
+{% block content %}
+  <h1>Trénink {{ workout.date.strftime('%Y-%m-%d') }}</h1>
+  {% if workout.note %}<p><strong>Poznámka:</strong> {{ workout.note }}</p>{% endif %}
+
+  <h2>Cviky</h2>
+  {% if not exercises %}
+    <p>Žádné cviky zatím nejsou.</p>
+  {% else %}
+    <table>
+      <thead>
+        <tr><th>Název</th><th>Série</th><th>Opakování</th><th>Váha</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for e in exercises %}
+          <tr>
+            <td>{{ e.name }}</td>
+            <td>{{ e.sets }}</td>
+            <td>{{ e.reps }}</td>
+            <td>{{ e.weight or '-' }}</td>
+            <td>
+              <a href="{{ url_for('exercise_delete_encrypted', encrypted_id=encrypt_exercise_id(e.id)) }}" 
+                 class="delete-exercise-btn" 
+                 style="color:red; text-decoration:none; padding:4px 8px; border-radius:4px; transition:all 0.3s;"
+                 onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#ef4444'"
+                 onmouseout="this.style.background='transparent'; this.style.color='red'"
+                 onclick="return confirm('Opravdu chcete smazat tento cvik?')">
+                🗑️ Smazat
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <h3>Přidat cvik</h3>
+  <form method="POST">
+    {{ form.csrf_token }}
+    {{ render_field(form.name) }}
+    {{ render_field(form.sets) }}
+    {{ render_field(form.reps) }}
+    {{ render_field(form.weight) }}
+    {{ form.submit() }}
+  </form>
+{% endblock %}

@@ -1,0 +1,17 @@
+flask
+flask-login
+flask-sqlalchemy
+werkzeug
+Flask-WTF
+WTForms
+email-validator
+alembic
+Authlib
+python-dotenv
+requests
+gunicorn
+reportlab
+psycopg2-binary
+flask-cors
+streamlit
+requests

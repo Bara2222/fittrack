@@ -1,0 +1,362 @@
+<<<<<<< HEAD
+
+{% extends "base.html" %}
+{% block title %}FitTrack – Domovská stránka{% endblock %}
+{% block content %}
+<style>
+  .welcome-main {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+  .welcome-header {
+    background: linear-gradient(90deg,#2ecc40 0%,#1976D2 100%);
+    color: #fff;
+    border-radius: 18px;
+    padding: 32px 24px;
+    box-shadow: 0 4px 24px rgba(46,204,64,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .welcome-header h1 {
+    margin: 0;
+    font-size: 2.2em;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .welcome-header .sub {
+    font-size: 1.1em;
+    opacity: 0.95;
+    margin-bottom: 8px;
+  }
+  .welcome-header .cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .welcome-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap: 18px;
+    margin-bottom: 8px;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .stat-label {
+    color: #1976D2;
+    font-size: 1em;
+    font-weight: 500;
+  }
+  .stat-value {
+    font-size: 2em;
+    font-weight: 700;
+    color: #2ecc40;
+  }
+  .stat-export {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .welcome-columns {
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 24px;
+  }
+  @media (max-width:900px){.welcome-columns{grid-template-columns:1fr;}}
+  .section-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    padding: 22px 18px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .section-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.2em;
+    color: #1976D2;
+  }
+  .quickstart-levels {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .pill {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #eafaf1;
+    color: #2ecc40;
+    font-weight: 600;
+    border: 1px solid #2ecc40;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .pill:hover {
+    background: #2ecc40;
+    color: #fff;
+  }
+  .template-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap: 12px;
+  }
+  .template-card {
+    background: #f6f6f6;
+    border-radius: 10px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .template-card strong {
+    font-size: 1.1em;
+    color: #1976D2;
+  }
+  .template-card .muted {
+    color: #888;
+    font-size: 0.98em;
+  }
+  .last-workouts-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .last-workout-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f6f6f6;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .last-workout-date {
+    background: #2ecc40;
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.98em;
+    font-weight: 600;
+    margin-right: 8px;
+  }
+  .timer-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+</style>
+
+<div class="welcome-main">
+  <div class="welcome-header">
+    <h1>Vítej, {{ current_user.username }}!</h1>
+    <div class="sub">Plánuj tréninky, využij šablony a sleduj svůj pokrok v moderním rozhraní.</div>
+    <div class="cta">
+      <a href="{{ url_for('workout_new') }}" class="btn btn-green">+ Nový trénink</a>
+      <a href="{{ url_for('workouts') }}" class="btn secondary">Moje tréninky</a>
+      <a href="{{ url_for('exercise_catalog') }}" class="btn btn-blue">Katalog cviků</a>
+    </div>
+  </div>
+
+  <div class="welcome-stats">
+    <div class="stat-card">
+      <div class="stat-label">Celkem tréninků</div>
+      <div class="stat-value">{{ stats.total_workouts }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cviky (poslední)</div>
+      <div class="stat-value">{{ stats.recent_exercises }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Poslední trénink</div>
+      <div class="stat-value">{% if last_workouts and last_workouts[0] %}{{ last_workouts[0].date.strftime('%d.%m.%Y') }}{% else %}-{% endif %}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Export</div>
+      <div class="stat-export">
+=======
+{% extends "base.html" %}
+{% block title %}Přehled – FitTrack{% endblock %}
+{% block content %}
+<style>
+  .dash{display:flex;flex-direction:column;gap:16px}
+  .hero{display:flex;flex-direction:column;gap:6px}
+  .hero h1{margin:0}
+  .hero .sub{color:var(--muted)}
+  .hero .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media (max-width:1000px){.stats{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:560px){.stats{grid-template-columns:1fr}}
+  .stat{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;background:rgba(255,255,255,.05)}
+  .stat .label{color:var(--muted);font-size:.9rem}
+  .stat .value{font-size:1.6rem;font-weight:700;margin-top:4px}
+
+  .columns{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+  @media (max-width:900px){.columns{grid-template-columns:1fr;}}
+
+  .section h3{margin:0 0 8px 0}
+  .list{list-style:none;margin:0;padding:0}
+  .list li{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 0}
+  .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);}
+  .muted{color:var(--muted)}
+
+  .segmented{display:flex;gap:8px;flex-wrap:wrap}
+  .segmented .opt{cursor:pointer}
+
+  .templates{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media (max-width:900px){.templates{grid-template-columns:1fr}}
+  .tpl{display:flex;flex-direction:column;gap:6px;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;background:rgba(255,255,255,.04)}
+
+  .timer-actions{display:flex;gap:10px;flex-wrap:wrap}
+</style>
+
+<div class="dash">
+  <div class="hero">
+    <h1>Ahoj, {{ current_user.username }}</h1>
+    <div class="sub">Plánuj tréninky, využij šablony a sleduj svůj pokrok v přehledném rozhraní.</div>
+    <div class="cta">
+      <a href="{{ url_for('workout_new') }}" class="btn">+ Nový trénink</a>
+      <a href="{{ url_for('workouts') }}" class="btn secondary">Moje tréninky</a>
+      <a href="{{ url_for('exercise_catalog') }}" class="btn">Katalog cviků</a>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="label">Celkem tréninků</div>
+      <div class="value">{{ stats.total_workouts }}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Cviky (poslední)</div>
+      <div class="value">{{ stats.recent_exercises }}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Poslední trénink</div>
+      <div class="value">{% if last_workouts and last_workouts[0] %}{{ last_workouts[0].date.strftime('%d.%m.%Y') }}{% else %}-{% endif %}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Export</div>
+      <div class="value" style="display:flex;gap:8px">
+>>>>>>> c27ed796d1382157ddff662cf30381bebd61aca4
+        <a class="btn" href="{{ url_for('export_csv') }}">CSV</a>
+        <a class="btn" href="{{ url_for('export_pdf') }}">PDF</a>
+      </div>
+    </div>
+  </div>
+
+<<<<<<< HEAD
+  <div class="welcome-columns">
+    <div class="section-card">
+      <h3>Rychlý start</h3>
+      <div class="muted" style="margin-bottom:8px">Vyber obtížnost a začni trénink. Úrovně upraví série/opakování a pauzy.</div>
+      <div class="quickstart-levels">
+        <a class="pill" href="{{ url_for('quickstart_level', level='zacatecnik') }}">Začátečník</a>
+        <a class="pill" href="{{ url_for('quickstart_level', level='pokracily') }}">Pokročilý</a>
+        <a class="pill" href="{{ url_for('quickstart_level', level='expert') }}">Expert</a>
+      </div>
+
+      <h4 style="margin:12px 0 8px">Přednastavené šablony</h4>
+      <div class="template-list">
+        <div class="template-card">
+=======
+  <div class="columns">
+    <div class="section card">
+      <h3>Rychlý start</h3>
+      <div class="muted" style="margin-bottom:8px">Vyber obtížnost a začni trénink. Úrovně mohou upravit série/opakování a pauzy.</div>
+      <div class="segmented" style="margin-bottom:10px">
+        <a class="pill opt" href="{{ url_for('quickstart_level', level='zacatecnik') }}">Začátečník</a>
+        <a class="pill opt" href="{{ url_for('quickstart_level', level='pokracily') }}">Pokročilý</a>
+        <a class="pill opt" href="{{ url_for('quickstart_level', level='expert') }}">Expert</a>
+      </div>
+
+      <h4 style="margin:12px 0 8px">Přednastavené šablony</h4>
+      <div class="templates">
+        <div class="tpl">
+>>>>>>> c27ed796d1382157ddff662cf30381bebd61aca4
+          <strong>Celé tělo</strong>
+          <div class="muted">Komplexní mix základních cviků.</div>
+          <a class="btn" href="{{ url_for('quickstart_template', slug='cele-telo') }}">Použít</a>
+        </div>
+<<<<<<< HEAD
+        <div class="template-card">
+=======
+        <div class="tpl">
+>>>>>>> c27ed796d1382157ddff662cf30381bebd61aca4
+          <strong>Domácí HIIT</strong>
+          <div class="muted">Intenzivní trénink bez vybavení.</div>
+          <a class="btn" href="{{ url_for('quickstart_template', slug='domaci-hiit') }}">Použít</a>
+        </div>
+<<<<<<< HEAD
+        <div class="template-card">
+=======
+        <div class="tpl">
+>>>>>>> c27ed796d1382157ddff662cf30381bebd61aca4
+          <strong>Protažení po běhu</strong>
+          <div class="muted">Rychlá regenerace a mobilita.</div>
+          <a class="btn" href="{{ url_for('quickstart_template', slug='protazeni-po-behu') }}">Použít</a>
+        </div>
+      </div>
+    </div>
+
+<<<<<<< HEAD
+    <div class="section-card">
+      <h3>Poslední tréninky</h3>
+      {% if last_workouts %}
+        <ul class="last-workouts-list">
+          {% for w in last_workouts %}
+            <li class="last-workout-item">
+              <div>
+                <span class="last-workout-date">{{ w.date.strftime('%d.%m.%Y') }}</span>
+                <span>{{ w.note or 'Bez poznámky' }}</span>
+=======
+    <div class="section card">
+      <h3>Poslední tréninky</h3>
+      {% if last_workouts %}
+        <ul class="list">
+          {% for w in last_workouts %}
+            <li>
+              <div>
+                <span class="pill">{{ w.date.strftime('%d.%m.%Y') }}</span>
+                <span style="margin-left:8px">{{ w.note or 'Bez poznámky' }}</span>
+>>>>>>> c27ed796d1382157ddff662cf30381bebd61aca4
+              </div>
+              <a class="btn" href="{{ url_for('workout_detail', wid=w.id) }}">Otevřít</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">Zatím žádné tréninky. Vytvoř si první.</p>
+      {% endif %}
+
+      <h4 style="margin:16px 0 8px">Časovač</h4>
+      <p class="muted">Spusť odpočítávání mezi sériemi nebo HIIT/kruhový režim.</p>
+      <div class="timer-actions">
+        <a class="btn" href="{{ url_for('timer') }}">Spustit časovač</a>
+        <a class="btn secondary" href="{{ url_for('timer_hiit') }}">HIIT režim</a>
+        <a class="btn" href="{{ url_for('timer_circuit') }}">Kruhový režim</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

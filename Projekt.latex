@@ -1,0 +1,69 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+
+\begin{document}
+
+\begin{tcolorbox}[colframe=blue!70!black, colback=blue!5!white, title=\textbf{\color{blue!70!black}Závěrečný projekt IT 4: SmartTrainer}, coltitle=black, fonttitle=\bfseries]
+\textbf{Aplikace pro vytváření a správu tréninků}
+\end{tcolorbox}
+
+\vspace{0.5em}
+
+\begin{tcolorbox}[colframe=red!70!black, colback=red!10!white, title=\textbf{\color{red!70!black}Hlavní funkce}, coltitle=black, fonttitle=\bfseries]
+\begin{itemize}
+    \item \textbf{Registrace a přihlášení} uživatele – ukládání vlastních tréninků a progresu.
+    \item \textbf{Tvorba tréninkových plánů} s výběrem cviků (název, popis, video/obrázek), počtem sérií, opakování, délkou cviku.
+    \item \textbf{Volba obtížnosti} – začátečník, pokročilý, expert (ovlivňuje počet cviků, série, pauzy).
+    \item \textbf{Časovač} – odpočítávání mezi sériemi a cviky s možností pauzy a restartu.
+    \item \textbf{Historie a statistiky} – přehled dokončených tréninků, délky a obtížnosti, možnost opakování.
+    \item \textbf{Hotové šablony} – například „Trénink celého těla“, „Domácí HIIT“, „Protažení po běhu“.
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{1em}
+
+\begin{tcolorbox}[colframe=green!70!black, colback=green!10!white, title=\textbf{\color{green!70!black}Cíle projektu}, coltitle=black, fonttitle=\bfseries]
+Navrhnout a vytvořit uživatelsky přívětivou aplikaci, která umožní:
+\begin{itemize}
+    \item Personalizaci tréninků dle úrovně, typu (kardio, síla, protažení) a časových možností uživatele.
+    \item Poskytnout databázi cviků s názvem, popisem, obrázkem nebo videem.
+    \item Implementovat časovač pro cviky i pauzy s možností pauzy a restartu.
+    \item Evidovat historii tréninků a sledovat pokrok uživatele.
+    \item Zajistit uživatelskou autentizaci a možnost přístupu odkudkoli.
+    \item Navrhnout responzivní a intuitivní UI pro mobil i web.
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{1em}
+
+\begin{tcolorbox}[colframe=orange!70!black, colback=orange!10!white, title=\textbf{\color{orange!70!black}Co se chci naučit}, coltitle=black, fonttitle=\bfseries]
+\begin{itemize}
+    \item Práce s databází a autentizací.
+    \item Návrh a rozvržení UI/UX.
+    \item Práce s časem (časovač, trvání tréninku).
+    \item Volitelně mobilní nebo webový vývoj.
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{1em}
+
+\begin{tcolorbox}[colframe=purple!70!black, colback=purple!10!white, title=\textbf{\color{purple!70!black}Technologie (příklad)}, coltitle=black, fonttitle=\bfseries]
+\textbf{Mobilní aplikace (doporučeno):} React Native nebo Flutter \\
+Backend: Firebase (Realtime DB / Firestore, autentizace) nebo Node.js + MongoDB \\
+Bonus: přehrávání videa u cviků
+
+\vspace{0.5em}
+
+\textbf{Webová aplikace:} React / Vue / HTML+CSS+JS \\
+Backend: Express (Node.js) + MongoDB / PostgreSQL \\
+Bonus: responzivní design pro mobil i desktop
+
+\vspace{0.5em}
+
+Další možnosti: Python Flask/Django, autentizace Firebase nebo JWT, grafické knihovny Chart.js nebo D3.js
+\end{tcolorbox}
+
+\end{document}

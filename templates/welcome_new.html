@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}{{ brand }} – Dashboard{% endblock %}
+
+{% block content %}
+<div class="welcome-dashboard">
+  <div class="welcome-header">
+    <h1>👋 Vítejte zpět, {{ current_user.username }}!</h1>
+    <p class="welcome-subtitle">Pokračujte ve svém fitness pokroku</p>
+    
+    <div class="quick-actions">
+      <a href="{{ url_for('workout_new') }}" class="action-btn primary">
+        <span>➕</span> Nový trénink
+      </a>
+      <a href="{{ url_for('exercise_catalog') }}" class="action-btn secondary">
+        <span>📚</span> Katalog cviků
+      </a>
+      <a href="{{ url_for('timer') }}" class="action-btn secondary">
+        <span>⏱️</span> Časovač
+      </a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">🏋️</div>
+      <div class="stat-content">
+        <h3>{{ stats.total_workouts }}</h3>
+        <p>Celkem tréninků</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon">💪</div>
+      <div class="stat-content">
+        <h3>{{ stats.recent_exercises }}</h3>
+        <p>Nedávné cviky</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon">📈</div>
+      <div class="stat-content">
+        <h3>{{ last_workouts|length }}</h3>
+        <p>Posledních 5 tréninků</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div class="section-card">
+      <h3>🎯 Rychlý start</h3>
+      <div class="quickstart-options">
+        <a href="{{ url_for('quickstart_level', level='beginner') }}" class="quickstart-btn">
+          <span class="level-icon">🌱</span>
+          <div>
+            <strong>Začátečník</strong>
+            <small>3 série × 10 opakování</small>
+          </div>
+        </a>
+        
+        <a href="{{ url_for('quickstart_level', level='intermediate') }}" class="quickstart-btn">
+          <span class="level-icon">🚀</span>
+          <div>
+            <strong>Pokročilý</strong>
+            <small>4 série × 10 opakování</small>
+          </div>
+        </a>
+        
+        <a href="{{ url_for('quickstart_level', level='advanced') }}" class="quickstart-btn">
+          <span class="level-icon">⚡</span>
+          <div>
+            <strong>Expert</strong>
+            <small>5 sérií × 8 opakování</small>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h3>📋 Šablony tréninků</h3>
+      <div class="templates-grid">
+        <a href="{{ url_for('quickstart_template', slug='cele-telo') }}" class="template-btn">
+          <span>🏋️</span>
+          <span>Celé tělo</span>
+        </a>
+        
+        <a href="{{ url_for('quickstart_template', slug='domaci-hiit') }}" class="template-btn">
+          <span>🔥</span>
+          <span>Domácí HIIT</span>
+        </a>
+        
+        <a href="{{ url_for('quickstart_template', slug='protazeni-po-behu') }}" class="template-btn">
+          <span>🧘</span>
+          <span>Protažení</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <h3>📚 Poslední tréninky</h3>
+    {% if last_workouts %}
+      <div class="workouts-list">
+        {% for w in last_workouts %}
+          <div class="workout-item">
+            <div class="workout-info">
+              <span class="workout-date">{{ w.date.strftime('%d.%m.%Y') }}</span>
+              <span class="workout-note">{{ w.note or 'Bez poznámky' }}</span>
+              <span class="workout-exercises">{{ w.exercises|length }} cviků</span>
+            </div>
+            <a href="{{ url_for('workout_detail', wid=w.id) }}" class="workout-btn">Otevřít</a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="muted">Zatím žádné tréninky. Vytvořte si první!</p>
+        <a href="{{ url_for('workout_new') }}" class="btn primary">Vytvořit trénink</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.welcome-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.welcome-header {
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: #0b1020;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.welcome-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.welcome-subtitle {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+.quick-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.action-btn.primary {
+  background: #0b1020;
+  color: var(--acc);
+  box-shadow: 0 4px 12px rgba(11, 16, 32, 0.3);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: #0b1020;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+.stat-icon {
+  font-size: 2rem;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-content h3 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--acc);
+}
+
+.stat-content p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.section-card {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.section-card h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+}
+
+.quickstart-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.quickstart-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+
+.quickstart-btn:hover {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.3);
+  transform: translateX(4px);
+}
+
+.level-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  background: var(--acc);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.template-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.template-btn:hover {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.3);
+  transform: translateY(-2px);
+}
+
+.template-btn span:first-child {
+  font-size: 1.5rem;
+}
+
+.workouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.workout-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.workout-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.workout-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.workout-date {
+  font-weight: 600;
+  color: var(--acc);
+}
+
+.workout-note {
+  color: var(--text);
+}
+
+.workout-exercises {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.workout-btn {
+  padding: 0.5rem 1rem;
+  background: var(--acc);
+  color: #0b1020;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.workout-btn:hover {
+  background: var(--acc2);
+  transform: translateY(-1px);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+}
+
+.empty-state p {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .welcome-dashboard {
+    padding: 1rem;
+  }
+  
+  .welcome-header h1 {
+    font-size: 2rem;
+  }
+  
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .workout-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .workout-info {
+    align-items: center;
+    text-align: center;
+  }
+}
+</style>
+{% endblock %}

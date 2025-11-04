@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}Tréninky{% endblock %}
+{% block content %}
+<div class="workouts-page">
+  <div class="page-header">
+    <h1>🏋️ Moje tréninky</h1>
+    <p class="page-subtitle">Sleduj svůj fitness pokrok</p>
+    
+    <div class="header-actions">
+      <a class="action-btn primary" href="{{ url_for('workout_new') }}">
+        <span>➕</span> Nový trénink
+      </a>
+      <a class="action-btn secondary" href="{{ url_for('exercise_catalog') }}">
+        <span>📚</span> Katalog cviků
+      </a>
+      <div class="export-group">
+        <a class="export-btn" href="{{ url_for('export_csv') }}" title="Export CSV">
+          <span>📊</span> CSV
+        </a>
+        <a class="export-btn" href="{{ url_for('export_pdf') }}" title="Export PDF">
+          <span>📄</span> PDF
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% if not workouts %}
+    <div class="empty-state">
+      <div class="empty-icon">🏃‍♂️</div>
+      <h3>Zatím žádné tréninky</h3>
+      <p>Začněte svou fitness cestu vytvořením prvního tréninku!</p>
+      <a href="{{ url_for('workout_new') }}" class="btn primary large">Vytvořit první trénink</a>
+    </div>
+  {% else %}
+    <div class="chart-section">
+      <h3>📈 Aktivita tréninků</h3>
+      <div class="chart-container">
+        <canvas id="workoutChart"></canvas>
+      </div>
+    </div>
+
+    <div class="workouts-grid">
+      {% for w in workouts %}
+        <div class="workout-card">
+          <div class="workout-header">
+            <div class="workout-date">
+              <span class="date-day">{{ w.date.strftime('%d') }}</span>
+              <span class="date-month">{{ w.date.strftime('%m/%Y') }}</span>
+            </div>
+            <div class="workout-actions">
+              <a href="{{ url_for('workout_detail', wid=w.id) }}" class="view-btn" title="Zobrazit detail">
+                👁️
+              </a>
+              <a href="{{ url_for('workout_delete', wid=w.id) }}" class="delete-btn" title="Smazat trénink" onclick="return confirm('Opravdu chcete smazat tento trénink?')">
+                🗑️
+              </a>
+            </div>
+          </div>
+          
+          <div class="workout-content">
+            <h4 class="workout-title">
+              {{ w.note or 'Trénink' }}
+            </h4>
+            
+            <div class="workout-stats">
+              <div class="stat">
+                <span class="stat-icon">💪</span>
+                <span class="stat-value">{{ w.exercises|length }}</span>
+                <span class="stat-label">cviků</span>
+              </div>
+              
+              {% if w.exercises %}
+                <div class="stat">
+                  <span class="stat-icon">⚖️</span>
+                  <span class="stat-value">{{ w.exercises|sum(attribute='sets') or 0 }}</span>
+                  <span class="stat-label">sérií</span>
+                </div>
+              {% endif %}
+            </div>
+            
+            {% if w.exercises %}
+              <div class="exercise-preview">
+                <strong>Cviky:</strong>
+                <span class="exercises-list">
+                  {% for ex in w.exercises[:3] %}{{ ex.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% if w.exercises|length > 3 %} a {{ w.exercises|length - 3 }} dalších...{% endif %}
+                </span>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div class="workout-footer">
+            <a href="{{ url_for('workout_detail', wid=w.id) }}" class="workout-link">
+              Zobrazit detail →
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  {% if workouts %}
+    const labels = {{ chart_labels|tojson }};
+    const values = {{ chart_values|tojson }};
+    
+    const ctx = document.getElementById('workoutChart');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Počet cviků',
+          data: values,
+          borderColor: '#22d3ee',
+          backgroundColor: 'rgba(34, 211, 238, 0.1)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#22d3ee',
+          pointBorderColor: '#0f172a',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#e5e7eb',
+              font: {
+                family: 'system-ui'
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: '#94a3b8',
+              font: {
+                family: 'system-ui'
+              }
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          },
+          y: {
+            ticks: {
+              color: '#94a3b8',
+              font: {
+                family: 'system-ui'
+              }
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          }
+        }
+      }
+    });
+  {% endif %}
+</script>
+
+<style>
+.workouts-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: #0b1020;
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.page-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.page-subtitle {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.action-btn.primary {
+  background: #0b1020;
+  color: var(--acc);
+  box-shadow: 0 4px 12px rgba(11, 16, 32, 0.3);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: #0b1020;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.export-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: #0b1020;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(17, 24, 39, 0.5);
+  border-radius: 20px;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  margin: 1rem 0;
+  color: var(--text);
+}
+
+.empty-state p {
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+.chart-section {
+  background: rgba(17, 24, 39, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
+}
+
+.workouts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.workout-card {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.workout-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+.workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 1rem;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(167, 139, 250, 0.1));
+}
+
+.workout-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--acc);
+  color: #0b1020;
+  border-radius: 12px;
+  padding: 0.5rem;
+  min-width: 60px;
+}
+
+.date-day {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.date-month {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.workout-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-btn, .delete-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.view-btn {
+  background: rgba(34, 211, 238, 0.2);
+  color: var(--acc);
+}
+
+.delete-btn {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+.view-btn:hover, .delete-btn:hover {
+  transform: scale(1.1);
+}
+
+.workout-content {
+  padding: 0 1.5rem 1rem;
+}
+
+.workout-title {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.workout-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.stat-icon {
+  font-size: 0.9rem;
+}
+
+.stat-value {
+  font-weight: 700;
+  color: var(--acc);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.exercise-preview {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.exercises-list {
+  color: var(--text);
+}
+
+.workout-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.workout-link {
+  color: var(--acc);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.workout-link:hover {
+  color: var(--acc2);
+}
+
+.btn.large {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .workouts-page {
+    padding: 1rem;
+  }
+  
+  .page-header {
+    padding: 1.5rem;
+  }
+  
+  .page-header h1 {
+    font-size: 2rem;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .workouts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .workout-header {
+    padding: 1rem;
+  }
+  
+  .workout-stats {
+    flex-wrap: wrap;
+  }
+}
+</style>
+{% endblock %}

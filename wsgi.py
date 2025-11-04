@@ -1,0 +1,3 @@
+from app import app as application
+
+# Gunicorn entrypoint: gunicorn -w 2 -b 0.0.0.0:8000 wsgi:application

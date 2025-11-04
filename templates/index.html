@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}FitTrack – Domovská stránka{% endblock %}
+
+{% block content %}
+  <h1>Vítejte ve FitTracku</h1>
+  <p class="muted">Jednoduchý, ale výkonný nástroj pro sledování tréninků, progresu a exportů.</p>
+  <ul>
+    <li>Evidence tréninků a cviků, včetně sérií, opakování a váhy.</li>
+    <li>Přehledné grafy s vývojem aktivit.</li>
+    <li>Rychlé přidávání cviků z katalogu.</li>
+    <li>Exporty do CSV i PDF jedním kliknutím.</li>
+    <li>Přihlášení přes Google nebo pomocí účtu.</li>
+    <li>Admin stránka pro správu uživatelů.</li>
+  </ul>
+  {% if not current_user.is_authenticated %}
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+      <a href="{{ url_for('register') }}" class="btn secondary">Začít zdarma</a>
+      <a href="{{ url_for('login') }}" class="btn">Přihlásit se</a>
+      <a class="btn google" href="{{ url_for('login_google') }}">Pokračovat s Google</a>
+    </div>
+  {% else %}
+    <a href="{{ url_for('workouts') }}" class="btn">Přejít na tréninky</a>
+  {% endif %}
+{% endblock %}
