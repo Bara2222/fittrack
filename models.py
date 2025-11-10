@@ -11,6 +11,10 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True)
     oauth_provider = db.Column(db.String(50))
     oauth_sub = db.Column(db.String(255))
+    # optional profile fields
+    age = db.Column(db.Integer)
+    height_cm = db.Column(db.Float)
+    weight_kg = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
 class Workout(db.Model):

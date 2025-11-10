@@ -41,6 +41,13 @@ def _ensure_schema():
                 to_add.append("ALTER TABLE user ADD COLUMN oauth_sub VARCHAR(255)")
             if 'created_at' not in insp_cols:
                 to_add.append("ALTER TABLE user ADD COLUMN created_at DATETIME")
+            # profile fields: age, height_cm, weight_kg
+            if 'age' not in insp_cols:
+                to_add.append("ALTER TABLE user ADD COLUMN age INTEGER")
+            if 'height_cm' not in insp_cols:
+                to_add.append("ALTER TABLE user ADD COLUMN height_cm FLOAT")
+            if 'weight_kg' not in insp_cols:
+                to_add.append("ALTER TABLE user ADD COLUMN weight_kg FLOAT")
             for stmt in to_add:
                 try:
                     db.session.execute(text(stmt))

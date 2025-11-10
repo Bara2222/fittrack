@@ -64,7 +64,59 @@ def api_logout():
 @api_bp.route('/me', methods=['GET'])
 @login_required
 def api_me():
-    return jsonify({'ok': True, 'user': {'id': current_user.id, 'username': current_user.username, 'email': current_user.email or '', 'is_admin': current_user.username == 'admin'}})
+    profile_completed = all([
+        current_user.age is not None,
+        current_user.height_cm is not None,
+        current_user.weight_kg is not None
+    ])
+    return jsonify({'ok': True, 'user': {
+        'id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email or '',
+        'is_admin': current_user.username == 'admin',
+        'age': current_user.age,
+        'height_cm': current_user.height_cm,
+        'weight_kg': current_user.weight_kg,
+        'profile_completed': profile_completed
+    }})
+
+
+@api_bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+def api_profile():
+    """GET returns current profile fields. POST updates age/height/weight."""
+    if request.method == 'GET':
+        return jsonify({'ok': True, 'profile': {
+            'age': current_user.age,
+            'height_cm': current_user.height_cm,
+            'weight_kg': current_user.weight_kg,
+            'profile_completed': all([current_user.age is not None, current_user.height_cm is not None, current_user.weight_kg is not None])
+        }})
+
+    data = request.get_json() or {}
+    try:
+        age = data.get('age')
+        height = data.get('height_cm') or data.get('height')
+        weight = data.get('weight_kg') or data.get('weight')
+        # Basic validation
+        if age is None or height is None or weight is None:
+            return jsonify({'ok': False, 'error': 'age, height_cm and weight_kg are required'}), 400
+        age = int(age)
+        height = float(height)
+        weight = float(weight)
+        if age <= 0 or height <= 0 or weight <= 0:
+            return jsonify({'ok': False, 'error': 'values must be positive'}), 400
+
+        # persist
+        u = User.query.get(current_user.id)
+        u.age = age
+        u.height_cm = height
+        u.weight_kg = weight
+        db.session.add(u)
+        db.session.commit()
+        return jsonify({'ok': True, 'message': 'profile updated'})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
 
 
 @api_bp.route('/workouts', methods=['GET'])
@@ -161,6 +213,7 @@ def api_exercise_catalog():
     catalog = [
         'Bench press','Dřep','Mrtvý tah','Přítahy na hrazdě','Tlaky na ramena',
         'Biceps zdvih','Triceps kliky','Výpady','Leg press','Veslování',
+        'Kettlebell swing','Plank',
     ]
     return jsonify({'ok': True, 'exercises': catalog})
 
@@ -170,11 +223,13 @@ def api_exercise_catalog():
 def api_export_csv():
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow(['workout_id','date','note','exercise','sets','reps','weight'])
+    # Lokalizované hlavičky v češtině
+    cw.writerow(['ID','Datum','Poznámka','Cvik','Série','Opakování','Váha (kg)'])
     workouts = Workout.query.filter_by(user_id=current_user.id).all()
     for w in workouts:
         for e in w.exercises:
-            cw.writerow([w.id, w.date.isoformat(), w.note or '', e.name, e.sets, e.reps, e.weight or ''])
+            # Datum v českém formátu dd.mm.YYYY
+            cw.writerow([w.id, w.date.strftime('%d.%m.%Y'), w.note or '', e.name, e.sets, e.reps, e.weight or ''])
     output = si.getvalue()
     return jsonify({'ok': True, 'csv': output})
 

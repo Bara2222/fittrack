@@ -215,6 +215,7 @@ def exercise_catalog():
     catalog = [
         'Bench press','Dřep','Mrtvý tah','Přítahy na hrazdě','Tlaky na ramena',
         'Biceps zdvih','Triceps kliky','Výpady','Leg press','Veslování',
+        'Kettlebell swing','Plank',
     ]
     return render_template('exercise_catalog.html', catalog=catalog)
 
@@ -258,11 +259,13 @@ def exercise_delete_encrypted(encrypted_id):
 def export_csv():
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow(['workout_id','date','note','exercise','sets','reps','weight'])
+    # Lokalizované hlavičky v češtině
+    cw.writerow(['ID','Datum','Poznámka','Cvik','Série','Opakování','Váha (kg)'])
     workouts = Workout.query.filter_by(user_id=current_user.id).all()
     for w in workouts:
         for e in w.exercises:
-            cw.writerow([w.id, w.date.isoformat(), w.note or '', e.name, e.sets, e.reps, e.weight or ''])
+            # Datum v českém formátu dd.mm.YYYY
+            cw.writerow([w.id, w.date.strftime('%d.%m.%Y'), w.note or '', e.name, e.sets, e.reps, e.weight or ''])
     output = si.getvalue()
     return Response(output, mimetype='text/csv', headers={'Content-Disposition':'attachment;filename=fittrack.csv'})
 
