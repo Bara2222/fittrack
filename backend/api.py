@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request, session, url_for, redirect
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from app import db, app
-from models import User, Workout, WorkoutExercise
+from backend import db, app
+from backend.models import User, Workout, WorkoutExercise
 from flask_cors import CORS
 import datetime
 import os
@@ -288,7 +288,9 @@ def api_admin_users():
 def api_google_login():
     """Return Google OAuth URL for frontend redirect"""
     try:
-        from oauth import oauth
+        from backend.oauth import oauth, is_configured
+        if not is_configured() or oauth is None:
+            return jsonify({'ok': False, 'error': 'Google OAuth is not configured on the server.'}), 501
         redirect_uri = url_for('api.api_google_callback', _external=True)
         auth_url = oauth.google.create_authorization_url(redirect_uri)
         return jsonify({'ok': True, 'auth_url': auth_url[0], 'state': auth_url[1]})
@@ -300,7 +302,9 @@ def api_google_login():
 def api_google_callback():
     """Handle Google OAuth callback"""
     try:
-        from oauth import oauth
+        from backend.oauth import oauth, is_configured
+        if not is_configured() or oauth is None:
+            return redirect('http://localhost:8501/?auth=error&msg=OAuth+not+configured')
         token = oauth.google.authorize_access_token()
         userinfo = token.get('userinfo')
         if not userinfo:

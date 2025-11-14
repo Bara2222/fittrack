@@ -1,3 +1,3 @@
-from app import app as application
+from backend.wsgi import application
 
-# Gunicorn entrypoint: gunicorn -w 2 -b 0.0.0.0:8000 wsgi:application
+# Entrypoint forwarded to backend.wsgi

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Tréninky{% endblock %}
+{% block content %}
+<!-- Simplified copy of workouts template for backend package -->
+<div class="workouts-page">
+  <h1>Moje tréninky</h1>
+  {% if not workouts %}
+    <p>Zatím žádné tréninky.</p>
+  {% else %}
+    <ul>
+      {% for w in workouts %}
+        <li><a href="{{ url_for('workout_detail', wid=w.id) }}">{{ w.date }} — {{ w.note }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+{% endblock %}

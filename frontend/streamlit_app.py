@@ -16,6 +16,20 @@ if 'session' not in st.session_state:
 
 session = st.session_state['session']
 
+
+def _safe_json(resp, default=None):
+    """Return parsed JSON or a fallback dict with 'error' or default."""
+    try:
+        return resp.json()
+    except Exception:
+        try:
+            text = resp.text
+            if text:
+                return {'error': text}
+        except Exception:
+            pass
+    return default if default is not None else {}
+
 # Initialize login state
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
@@ -43,7 +57,7 @@ def check_login():
         r = session.get(f"{API_BASE}/me")
         if r.ok:
             st.session_state['logged_in'] = True
-            st.session_state['user'] = r.json().get('user')
+            st.session_state['user'] = _safe_json(r).get('user')
             return True
     except Exception:
         pass
@@ -74,10 +88,8 @@ def profile_form():
                     st.session_state['user'].update({'age': payload['age'], 'height_cm': payload['height_cm'], 'weight_kg': payload['weight_kg'], 'profile_completed': True})
                     st.rerun()
                 else:
-                    try:
-                        st.error(r.json().get('error', 'Chyba při ukládání profilu'))
-                    except Exception:
-                        st.error('Chyba při ukládání profilu')
+                    err = _safe_json(r).get('error')
+                    st.error(err or 'Chyba při ukládání profilu')
             except Exception:
                 st.error('Nepodařilo se kontaktovat API')
     st.stop()
@@ -101,20 +113,20 @@ def login_page():
                 else:
                     r = session.post(f"{API_BASE}/login", json={'username': username, 'password': password})
                     if r.ok:
-                        data = r.json()
+                        data = _safe_json(r)
                         st.session_state['logged_in'] = True
                         st.session_state['user'] = {'username': username, 'is_admin': data.get('is_admin', False)}
                         st.success("Přihlášení úspěšné!")
                         st.rerun()
                     else:
-                        st.error(r.json().get('error', 'Chyba při přihlášení'))
+                        st.error(_safe_json(r).get('error', 'Chyba při přihlášení'))
         
         st.markdown("---")
         st.subheader("Nebo se přihlaste přes Google")
         if st.button("🔐 Přihlásit se přes Google", use_container_width=True):
             r = session.get(f"{API_BASE}/google/login")
             if r.ok:
-                auth_url = r.json().get('auth_url')
+                auth_url = _safe_json(r).get('auth_url')
                 st.markdown(f'<meta http-equiv="refresh" content="0;url={auth_url}">', unsafe_allow_html=True)
                 st.info(f"Přesměrování na Google... Pokud se nic nestane, [klikněte sem]({auth_url})")
             else:
@@ -140,14 +152,14 @@ def login_page():
                     if r.ok:
                         st.success("Registrace úspěšná! Nyní se můžete přihlásit.")
                     else:
-                        st.error(r.json().get('error', 'Chyba při registraci'))
+                        st.error(_safe_json(r).get('error', 'Chyba při registraci'))
 
 def dashboard_page():
     st.markdown('<div class="main-header">📊 Dashboard</div>', unsafe_allow_html=True)
     # Stats
     r = session.get(f"{API_BASE}/stats")
     if r.ok:
-        stats = r.json().get('stats', {})
+        stats = _safe_json(r).get('stats', {})
         col1, col2 = st.columns(2)
         with col1:
             st.markdown(f"""
@@ -200,7 +212,7 @@ def dashboard_page():
     st.subheader("📅 Poslední tréninky")
     r = session.get(f"{API_BASE}/workouts")
     if r.ok:
-        workouts = r.json().get('workouts', [])[:5]
+        workouts = _safe_json(r).get('workouts', [])[:5]
         if workouts:
             for w in workouts:
                 with st.expander(f"📌 {w['date']} — {w['exercise_count']} cviků"):
@@ -274,7 +286,7 @@ def workout_detail_page():
         st.error("Trénink nenalezen")
         return
     
-    workout = r.json().get('workout')
+    workout = _safe_json(r).get('workout')
     
     col1, col2 = st.columns([4, 1])
     with col1:
@@ -406,7 +418,7 @@ def catalog_page():
         st.error("Nepodařilo se načíst katalog")
         return
     
-    catalog = r.json().get('exercises', [])
+    catalog = _safe_json(r).get('exercises', [])
     
     st.write("Základní cviky pro inspiraci:")
     # Load user's workouts so they can choose where to add an exercise
@@ -414,12 +426,12 @@ def catalog_page():
     workouts = []
     workout_map = {}
     if wr.ok:
-        workouts = wr.json().get('workouts', [])
-        for w in workouts:
-            note = (w.get('note') or 'Bez poznámky')
-            short = note if len(note) <= 30 else note[:27] + '...'
-            label = f"{w['date']} — {short} ({w['exercise_count']} cviků)"
-            workout_map[label] = w['id']
+        workouts = _safe_json(wr).get('workouts', [])
+    for w in workouts:
+        note = (w.get('note') or 'Bez poznámky')
+        short = note if len(note) <= 30 else note[:27] + '...'
+        label = f"{w['date']} — {short} ({w['exercise_count']} cviků)"
+        workout_map[label] = w['id']
 
     # Option to create a new workout
     create_new_label = '🔹 Vytvořit nový trénink (dnešek)'
@@ -447,7 +459,7 @@ def catalog_page():
                     payload = {'date': date.today().isoformat(), 'note': f'Přidáno z katalogu: {exercise}', 'exercises': []}
                     cr = session.post(f"{API_BASE}/workouts", json=payload)
                     if cr.ok:
-                        wid = cr.json().get('id')
+                        wid = _safe_json(cr).get('id')
                     else:
                         st.error('Nepodařilo se vytvořit nový trénink')
                         continue
@@ -463,7 +475,7 @@ def catalog_page():
                     try:
                         wr = session.get(f"{API_BASE}/workouts")
                         if wr.ok:
-                            workouts = wr.json().get('workouts', [])
+                            workouts = _safe_json(wr).get('workouts', [])
                             workout_map = {}
                             for w in workouts:
                                 note = (w.get('note') or 'Bez poznámky')
@@ -478,7 +490,7 @@ def catalog_page():
                     st.rerun()
                 else:
                     try:
-                        st.error(ae.json().get('error', 'Chyba při přidávání cviku'))
+                        st.error(_safe_json(ae).get('error', 'Chyba při přidávání cviku'))
                     except Exception:
                         st.error('Chyba při přidávání cviku')
 
@@ -530,7 +542,7 @@ def export_page():
             # Build JSON from API
             r = session.get(f"{API_BASE}/workouts")
             if r.ok:
-                summaries = r.json().get('workouts', [])
+                summaries = _safe_json(r).get('workouts', [])
                 translated = []
                 for w in summaries:
                     # fetch detailed workout to include exercises
@@ -584,7 +596,7 @@ def admin_page():
         st.error("Chyba při načítání uživatelů")
         return
     
-    users = r.json().get('users', [])
+    users = _safe_json(r).get('users', [])
     
     st.subheader(f"👥 Celkem uživatelů: {len(users)}")
     
@@ -700,7 +712,7 @@ def profile_editor_main():
                     st.rerun()
                 else:
                     try:
-                        st.error(r.json().get('error', 'Chyba při ukládání profilu'))
+                        st.error(_safe_json(r).get('error', 'Chyba při ukládání profilu'))
                     except Exception:
                         st.error('Chyba při ukládání profilu')
             except Exception:

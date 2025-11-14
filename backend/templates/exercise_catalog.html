@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Katalog cviků</h1>
+<p>Seznam doporučených cviků.</p>
+{% endblock %}
+
+{% extends "base.html" %}
+{% block title %}Katalog cviku{% endblock %}
+{% block content %}
+  <h1>Katalog cvik</h1>
+  <form method="POST" action="{{ url_for('workouts_quickadd') }}">
+    {% for name in catalog %}
+      <label style="display:block;margin:6px 0;">
+        <input type="checkbox" name="exercises" value="{{ name }}"> {{ name }}
+      </label>
+    {% endfor %}
+    <button class="btn" type="submit">Vytvorit trenink</button>
+  </form>
+{% endblock %}
