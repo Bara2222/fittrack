@@ -3,29 +3,29 @@ from wtforms import StringField, PasswordField, SubmitField, IntegerField, Float
 from wtforms.validators import DataRequired, Length, NumberRange, Regexp, EqualTo, ValidationError
 
 class RegisterForm(FlaskForm):
-    username = StringField('U\u017eivatelske jmeno', validators=[DataRequired(), Length(min=3, max=150), Regexp(r'^[A-Za-z0-9]+$', message='Pou\u017eij pouze p\u00edsmena a \u010d\u00edsla')])
-    password = PasswordField('Heslo', validators=[DataRequired(), Length(min=8, message='Minimalne 8 znaku')])
-    confirm_password = PasswordField('Potvrdit heslo', validators=[DataRequired(), EqualTo('password', message='Hesla se neshoduji')])
+    username = StringField('Uživatelské jméno', validators=[DataRequired(), Length(min=3, max=150), Regexp(r'^[A-Za-z0-9]+$', message='Použij pouze písmena a čísla')])
+    password = PasswordField('Heslo', validators=[DataRequired(), Length(min=8, message='Minimálně 8 znaků')])
+    confirm_password = PasswordField('Potvrdit heslo', validators=[DataRequired(), EqualTo('password', message='Hesla se neshodují')])
     submit = SubmitField('Registrovat')
 
     def validate_password(self, field):
         pw = field.data or ''
         if not any(c.islower() for c in pw) or not any(c.isupper() for c in pw) or not any(c.isdigit() for c in pw) or not any(c in '!@#$%^&*()-_=+[]{};:,.<>/\\?|`~' for c in pw):
-            raise ValidationError('Heslo musi mit male i velke pismeno, cislo a specialni znak')
+            raise ValidationError('Heslo musí mít malé i velké písmeno, číslo a speciální znak')
 
 class LoginForm(FlaskForm):
-    username = StringField('U\u017eivatelske jmeno', validators=[DataRequired(), Regexp(r'^[A-Za-z0-9]+$', message='Pou\u017eij pouze p\u00edsmena a \u010d\u00edsla')])
+    username = StringField('Uživatelské jméno', validators=[DataRequired(), Regexp(r'^[A-Za-z0-9]+$', message='Použij pouze písmena a čísla')])
     password = PasswordField('Heslo', validators=[DataRequired()])
-    submit = SubmitField('Prihlasit')
+    submit = SubmitField('Přihlásit')
 
 class WorkoutForm(FlaskForm):
     date = DateField('Datum', validators=[DataRequired()], format='%Y-%m-%d')
-    note = TextAreaField('Poznamka')
-    submit = SubmitField('Ulozit trenink')
+    note = TextAreaField('Poznámka')
+    submit = SubmitField('Uložit trénink')
 
 class ExerciseForm(FlaskForm):
-    name = StringField('Nazev cviku', validators=[DataRequired(), Length(min=2, max=120)])
-    sets = IntegerField('Serie', validators=[DataRequired(), NumberRange(min=1, max=20)])
-    reps = IntegerField('Opakovani', validators=[DataRequired(), NumberRange(min=1, max=100)])
-    weight = FloatField('Vaha (kg)')
-    submit = SubmitField('Pridat cvik')
+    name = StringField('Název cviku', validators=[DataRequired(), Length(min=2, max=120)])
+    sets = IntegerField('Série', validators=[DataRequired(), NumberRange(min=1, max=20)])
+    reps = IntegerField('Opakování', validators=[DataRequired(), NumberRange(min=1, max=100)])
+    weight = FloatField('Váha (kg)')
+    submit = SubmitField('Přidat cvik')

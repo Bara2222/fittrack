@@ -1,0 +1,11 @@
+# frontend/requirements.txt
+# FitTrack Frontend Dependencies
+
+# Core Streamlit
+streamlit==1.29.0
+
+# HTTP Requests
+requests==2.31.0
+
+# Data Processing
+pandas==2.1.4

@@ -1,24 +1,27 @@
-# FitTrack - Combined Requirements
-# For separate installations use backend/requirements.txt or frontend/requirements.txt
+# backend/requirements.txt
+# FitTrack Backend Dependencies
 
-# Backend Dependencies
+# Core Flask
 Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-CORS==4.0.0
 Flask-WTF==1.2.1
+
+# Database
 SQLAlchemy==2.0.23
 alembic==1.13.0
 psycopg2-binary==2.9.9
+
+# Security
 Werkzeug==3.0.1
 WTForms==3.1.1
 email-validator==2.1.0
 python-dotenv==1.0.0
+
+# OAuth
 Authlib==1.3.0
+
+# Utilities
 gunicorn==21.2.0
 reportlab==4.0.7
-
-# Frontend Dependencies
-streamlit==1.29.0
-requests==2.31.0
-pandas==2.1.4

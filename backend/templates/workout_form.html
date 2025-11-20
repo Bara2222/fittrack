@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% from "_macros.html" import render_field %}
-{% block title %}Novy trenink{% endblock %}
+{% block title %}Nový trénink{% endblock %}
 {% block content %}
-  <h1>Novy trenink</h1>
+  <h1>Nový trénink</h1>
   <form method="POST">
     {{ form.csrf_token }}
     {{ render_field(form.date) }}

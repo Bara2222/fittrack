@@ -1,183 +1,363 @@
-# 💪 FitTrack - Fitness Tracking Application
+# 💪 FitTrack - Clean Architecture Edition# 💪 FitTrack - Fitness Tracking Application
 
-Moderní fitness tracking aplikace s rozděleným frontendem (Streamlit) a backendem (Flask API).
 
-## 🚀 Funkce
 
-- ✅ **Registrace a přihlášení** - Klasická registrace nebo Google OAuth
-- 💪 **Správa tréninků** - Vytváření, editace a mazání tréninků
-- 🏋️ **Evidence cviků** - Detailní záznamy o cvicích, sériích, opakováních a váhách
-- 📊 **Dashboard** - Přehled statistik a posledních tréninků
-- ⚡ **Rychlý start** - Předpřipravené tréninky pro začátečníky, pokročilé a experty
-- 📚 **Katalog cviků** - Inspirace pro vaše tréninky
-- 📥 **Export dat** - Stažení všech dat do CSV formátu
-- ⚙️ **Admin panel** - Správa uživatelů (pouze pro adminy)
-- 🔐 **Google OAuth** - Jednoduché přihlášení přes Google účet
+Moderní fitness tracking aplikace s **kompletně odděleným** backendem (Flask REST API) a frontendem (Streamlit).Moderní fitness tracking aplikace s rozděleným frontendem (Streamlit) a backendem (Flask API).
 
-## 📋 Požadavky
 
-- Python 3.8+
-- Git (pro klonování repozitáře)
 
-## 🔧 Instalace
+## 🏗️ Architektura## 🚀 Funkce
 
-### 1. Naklonujte repozitář
 
-```bash
+
+```- ✅ **Registrace a přihlášení** - Klasická registrace nebo Google OAuth
+
+FitTrack/- 💪 **Správa tréninků** - Vytváření, editace a mazání tréninků
+
+├── backend/              # 🔧 Flask REST API Server- 🏋️ **Evidence cviků** - Detailní záznamy o cvicích, sériích, opakováních a váhách
+
+│   ├── __init__.py      # Package initialization- 📊 **Dashboard** - Přehled statistik a posledních tréninků
+
+│   ├── app.py           # Flask app factory- ⚡ **Rychlý start** - Předpřipravené tréninky pro začátečníky, pokročilé a experty
+
+│   ├── config.py        # Configuration management- 📚 **Katalog cviků** - Inspirace pro vaše tréninky
+
+│   ├── database_models.py # SQLAlchemy ORM models- 📥 **Export dat** - Stažení všech dat do CSV formátu
+
+│   ├── api_routes.py    # REST API endpoints- ⚙️ **Admin panel** - Správa uživatelů (pouze pro adminy)
+
+│   ├── run.py           # Server entry point- 🔐 **Google OAuth** - Jednoduché přihlášení přes Google účet
+
+│   ├── requirements.txt # Backend dependencies
+
+│   └── instance/        # SQLite database (gitignored)## 📋 Požadavky
+
+│
+
+├── frontend/            # 🎨 Streamlit UI Application- Python 3.8+
+
+│   ├── streamlit_app.py # Main UI application- Git (pro klonování repozitáře)
+
+│   └── requirements.txt # Frontend dependencies
+
+│## 🔧 Instalace
+
+├── .env                 # 🔐 Environment variables
+
+├── .gitignore          # Git ignore rules### 1. Naklonujte repozitář
+
+└── README.md           # This file
+
+``````bash
+
 git clone https://github.com/davidandel/FitTrack.git
-cd FitTrack
+
+## ✨ Funkcecd FitTrack
+
 ```
 
-### 2. Vytvořte a aktivujte virtuální prostředí
+- ✅ **Autentizace** - Registrace, přihlášení, Google OAuth
 
-**Windows PowerShell:**
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+- 💪 **Správa tréninků** - Vytváření, editace, mazání### 2. Vytvořte a aktivujte virtuální prostředí
 
-**Linux/Mac:**
+- 🏋️ **Evidence cviků** - Série, opakování, váhy
+
+- 📊 **Dashboard** - Statistiky a přehled**Windows PowerShell:**
+
+- ⚡ **Rychlý start** - Předpřipravené tréninky```powershell
+
+- 📚 **Katalog cviků** - Databáze cvičenípython -m venv .venv
+
+- 📥 **Export dat** - CSV export.\.venv\Scripts\Activate.ps1
+
+- ⚙️ **Admin panel** - Správa uživatelů```
+
+
+
+## 🚀 Rychlý start**Linux/Mac:**
+
 ```bash
-python -m venv .venv
+
+### 1. Instalacepython -m venv .venv
+
 source .venv/bin/activate
-```
 
-### 3. Nainstalujte závislosti
+```bash```
+
+# Naklonujte repozitář
+
+git clone https://github.com/davidandel/FitTrack.git### 3. Nainstalujte závislosti
+
+cd FitTrack
 
 ```bash
-pip install -r requirements.txt
-```
 
-### 4. Konfigurace (.env soubor)
+# Vytvořte virtuální prostředípip install -r requirements.txt
+
+python -m venv .venv```
+
+
+
+# Windows### 4. Konfigurace (.env soubor)
+
+.\.venv\Scripts\Activate.ps1
 
 Soubor `.env` už obsahuje základní konfiguraci včetně Google OAuth credentials. Pro produkční použití změňte:
 
-```env
-GOOGLE_CLIENT_ID="your_google_client_id"
+# Linux/Mac
+
+source .venv/bin/activate```env
+
+```GOOGLE_CLIENT_ID="your_google_client_id"
+
 GOOGLE_CLIENT_SECRET="your_google_client_secret"
-SECRET_KEY="your_secret_key"
+
+### 2. Backend setupSECRET_KEY="your_secret_key"
+
 ADMIN_PASSWORD="your_admin_password"
+
+```bash```
+
+# Instalace backend dependencies
+
+cd backend### 5. Inicializace databáze
+
+pip install -r requirements.txt
+
+cd ..Databáze se vytvoří automaticky při prvním spuštění, nebo můžete spustit migrace:
+
 ```
-
-### 5. Inicializace databáze
-
-Databáze se vytvoří automaticky při prvním spuštění, nebo můžete spustit migrace:
 
 ```bash
-python -m alembic upgrade head
+
+Vytvořte `.env` soubor v kořenovém adresáři:python -m alembic upgrade head
+
 ```
 
-## 🚀 Spuštění aplikace
+```env
 
-### Backend (Flask API)
+# Flask Configuration## 🚀 Spuštění aplikace
 
-V hlavním terminálu:
+SECRET_KEY=your-secret-key-change-in-production
+
+FLASK_ENV=development### Backend (Flask API)
+
+
+
+# Admin CredentialsV hlavním terminálu:
+
+ADMIN_PASSWORD=Admin&4
 
 ```bash
-python app.py
-```
+
+# Google OAuth (optional)python app.py
+
+GOOGLE_CLIENT_ID=your-google-client-id```
+
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 
 API bude dostupné na `http://localhost:5000`
 
-### Frontend (Streamlit)
+# CORS
+
+CORS_ORIGINS=http://localhost:8501,http://127.0.0.1:8501### Frontend (Streamlit)
+
+```
 
 V druhém terminálu:
 
+### 3. Spuštění Backend serveru
+
 ```bash
-streamlit run frontend/streamlit_app.py
-```
 
-Streamlit UI bude dostupné na `http://localhost:8501`
+```bashstreamlit run frontend/streamlit_app.py
 
-## 📁 Struktura projektu
+cd backend```
 
-```
+python run.py
+
+```Streamlit UI bude dostupné na `http://localhost:8501`
+
+
+
+Backend API běží na: **http://localhost:5000**## 📁 Struktura projektu
+
+
+
+### 4. Spuštění Frontend aplikace```
+
 FitTrack/
-├── backend/           # Flask API blueprinty
+
+V **novém terminálu**:├── backend/           # Flask API blueprinty
+
 │   ├── __init__.py
-│   └── api.py        # REST API endpointy
-├── frontend/          # Streamlit frontend
-│   └── streamlit_app.py
+
+```bash│   └── api.py        # REST API endpointy
+
+# Aktivujte virtuální prostředí├── frontend/          # Streamlit frontend
+
+.\.venv\Scripts\Activate.ps1  # Windows│   └── streamlit_app.py
+
 ├── migrations/        # Alembic database migrations
-├── templates/         # Flask HTML templates (legacy web UI)
-├── instance/          # SQLite database (gitignored)
-├── app.py            # Flask aplikace + API registrace
+
+# Instalace frontend dependencies├── templates/         # Flask HTML templates (legacy web UI)
+
+cd frontend├── instance/          # SQLite database (gitignored)
+
+pip install -r requirements.txt├── app.py            # Flask aplikace + API registrace
+
 ├── auth.py           # Autentizace a HTML routes
-├── models.py         # SQLAlchemy databázové modely
-├── forms.py          # WTForms formuláře
-├── oauth.py          # Google OAuth konfigurace
+
+# Spuštění Streamlit├── models.py         # SQLAlchemy databázové modely
+
+streamlit run streamlit_app.py├── forms.py          # WTForms formuláře
+
+```├── oauth.py          # Google OAuth konfigurace
+
 ├── requirements.txt  # Python závislosti
-├── .env             # Konfigurace (Google OAuth, secret keys)
+
+Frontend UI běží na: **http://localhost:8501**├── .env             # Konfigurace (Google OAuth, secret keys)
+
 └── README.md        # Tento soubor
+
+## 🔌 API Endpoints```
+
+
+
+### Authentication## 🔐 Google OAuth nastavení
+
 ```
 
-## 🔐 Google OAuth nastavení
+POST   /api/register          # Registrace1. Jděte na [Google Cloud Console](https://console.cloud.google.com/)
 
-1. Jděte na [Google Cloud Console](https://console.cloud.google.com/)
-2. Vytvořte nový projekt nebo vyberte existující
-3. Aktivujte Google+ API
-4. Vytvořte OAuth 2.0 credentials (Web application)
-5. Přidejte authorized redirect URIs:
-   - `http://localhost:5000/auth/google/callback`
+POST   /api/login             # Přihlášení2. Vytvořte nový projekt nebo vyberte existující
+
+POST   /api/logout            # Odhlášení3. Aktivujte Google+ API
+
+GET    /api/me                # Aktuální uživatel4. Vytvořte OAuth 2.0 credentials (Web application)
+
+GET/POST /api/profile         # Profil5. Přidejte authorized redirect URIs:
+
+```   - `http://localhost:5000/auth/google/callback`
+
    - `http://127.0.0.1:5000/auth/google/callback`
-6. Zkopírujte Client ID a Client Secret do `.env` souboru
 
-## 🔌 API Endpointy
+### Workouts6. Zkopírujte Client ID a Client Secret do `.env` souboru
 
-### Autentizace
-- `POST /api/register` - Registrace nového uživatele
-- `POST /api/login` - Přihlášení
+```
+
+GET    /api/workouts          # Seznam tréninků## 🔌 API Endpointy
+
+GET    /api/workouts/<id>     # Detail
+
+POST   /api/workouts          # Vytvoření### Autentizace
+
+DELETE /api/workouts/<id>     # Smazání- `POST /api/register` - Registrace nového uživatele
+
+```- `POST /api/login` - Přihlášení
+
 - `POST /api/logout` - Odhlášení
-- `GET /api/me` - Informace o přihlášeném uživateli
-- `GET /api/google/login` - Google OAuth URL
-- `GET /api/google/callback` - Google OAuth callback
 
-### Tréninky
-- `GET /api/workouts` - Seznam tréninků
+### Exercises- `GET /api/me` - Informace o přihlášeném uživateli
+
+```- `GET /api/google/login` - Google OAuth URL
+
+POST   /api/exercises/<workout_id>/add  # Přidat cvik- `GET /api/google/callback` - Google OAuth callback
+
+DELETE /api/exercises/<id>              # Smazat cvik
+
+GET    /api/catalog                     # Katalog cviků### Tréninky
+
+```- `GET /api/workouts` - Seznam tréninků
+
 - `GET /api/workouts/<id>` - Detail tréninku
-- `POST /api/workouts` - Vytvoření tréninku
-- `DELETE /api/workouts/<id>` - Smazání tréninku
 
-### Cviky
-- `POST /api/exercises/<workout_id>/add` - Přidání cviku
-- `DELETE /api/exercises/<id>` - Smazání cviku
-- `GET /api/catalog` - Katalog doporučených cviků
+### Utils- `POST /api/workouts` - Vytvoření tréninku
 
-### Ostatní
+```- `DELETE /api/workouts/<id>` - Smazání tréninku
+
+GET    /api/stats                    # Statistiky
+
+POST   /api/quickstart/<level>       # Rychlý start### Cviky
+
+GET    /api/export/csv               # Export CSV- `POST /api/exercises/<workout_id>/add` - Přidání cviku
+
+GET    /api/admin/users              # Admin panel- `DELETE /api/exercises/<id>` - Smazání cviku
+
+```- `GET /api/catalog` - Katalog doporučených cviků
+
+
+
+## 🛠️ Technologie### Ostatní
+
 - `GET /api/stats` - Statistiky uživatele
-- `POST /api/quickstart/<level>` - Rychlý start tréninku
-- `GET /api/export/csv` - Export do CSV
-- `GET /api/admin/users` - Admin panel (pouze pro adminy)
 
-## 👤 Výchozí admin účet
+### Backend- `POST /api/quickstart/<level>` - Rychlý start tréninku
+
+- Flask 3.0, SQLAlchemy 2.0, Flask-Login, Flask-CORS- `GET /api/export/csv` - Export do CSV
+
+- Authlib (OAuth), Werkzeug (Security)- `GET /api/admin/users` - Admin panel (pouze pro adminy)
+
+
+
+### Frontend## 👤 Výchozí admin účet
+
+- Streamlit 1.29, Requests, Pandas
 
 - Username: `admin`
-- Password: `Admin&4` (nebo hodnota z `.env`)
+
+### Database- Password: `Admin&4` (nebo hodnota z `.env`)
+
+- SQLite (dev) / PostgreSQL (production)
 
 ## 🛠️ Technologie
 
+## 🔐 Google OAuth Setup
+
 **Backend:**
-- Flask - Web framework
-- Flask-SQLAlchemy - ORM
-- Flask-Login - Session management
-- Authlib - Google OAuth
+
+1. [Google Cloud Console](https://console.cloud.google.com/)- Flask - Web framework
+
+2. Vytvořte projekt → OAuth 2.0 credentials- Flask-SQLAlchemy - ORM
+
+3. Authorized redirect: `http://localhost:5000/api/google/callback`- Flask-Login - Session management
+
+4. Zkopírujte Client ID/Secret do `.env`- Authlib - Google OAuth
+
 - Alembic - Database migrations
-- Flask-CORS - API CORS support
 
-**Frontend:**
-- Streamlit - Modern Python web framework
-- Pandas - Data manipulation
-- Requests - HTTP client
+## 📝 Clean Architecture- Flask-CORS - API CORS support
 
-**Database:**
+
+
+- ✅ Separace Backend/Frontend**Frontend:**
+
+- ✅ RESTful API- Streamlit - Modern Python web framework
+
+- ✅ Input Validation- Pandas - Data manipulation
+
+- ✅ Error Handling & Logging- Requests - HTTP client
+
+- ✅ Security (Password hashing, CORS)
+
+- ✅ Factory Pattern**Database:**
+
 - SQLite (dev) / PostgreSQL (production ready)
+
+## 👨‍💻 Author
 
 ## 📝 Poznámky
 
+**David Anděl** - [GitHub](https://github.com/davidandel)
+
 - Streamlit komunikuje s Flask API přes session cookies
-- Pro produkční nasazení doporučujeme přejít na JWT tokeny
+
+## 📄 License- Pro produkční nasazení doporučujeme přejít na JWT tokeny
+
 - Původní Flask HTML UI zůstává funkční na hlavní URL
-- Streamlit frontend běží na samostatném portu (8501)
+
+MIT- Streamlit frontend běží na samostatném portu (8501)
+
 
 ## 🤝 Příspěvky
 

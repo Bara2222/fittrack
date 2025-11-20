@@ -1,21 +1,16 @@
 {% extends "base.html" %}
-{% block content %}
-<h1>Admin</h1>
-<p>Seznam uživatelů a správní panel (zjednodušené zobrazení).</p>
-{% endblock %}
-{% extends "base.html" %}
 {% block title %}Admin{% endblock %}
 {% block content %}
   <h1>Administrace</h1>
   <table>
-    <thead><tr><th>ID</th><th>Uzivatel</th><th>Email</th><th>OAuth</th><th>Vytvoren</th></tr></thead>
+    <thead><tr><th>ID</th><th>Uživatel</th><th>Email</th><th>OAuth</th><th>Vytvořen</th></tr></thead>
     <tbody>
       {% for u in users %}
         <tr>
           <td>{{ u.id }}</td>
           <td>{{ u.username }}</td>
           <td>{{ u.email or '-' }}</td>
-          <td>{{ u.oauth_provider or '-' }}</td>
+          <td>{% if u.oauth_provider %}{{ u.oauth_provider }}{% else %}-{% endif %}</td>
           <td>{{ u.created_at or '-' }}</td>
         </tr>
       {% endfor %}
