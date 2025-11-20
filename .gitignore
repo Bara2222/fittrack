@@ -12,7 +12,10 @@ env/
 
 # Env files - Contains secrets, never commit!
 .env
-.env.*
+.env.local
+.env.*.local
+# But keep .env.example as template
+!.env.example
 
 # SQLite
 *.sqlite3
