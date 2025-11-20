@@ -10,8 +10,9 @@ venv/
 ENV/
 env/
 
-# Env files - KEEP .env for deployment config
-# .env
+# Env files - Contains secrets, never commit!
+.env
+.env.*
 
 # SQLite
 *.sqlite3
