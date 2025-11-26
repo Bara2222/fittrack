@@ -8,7 +8,8 @@ import logging
 from datetime import datetime
 from traceback import format_exc
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
+import uuid
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_cors import CORS
@@ -59,6 +60,39 @@ def create_app(config_name='development'):
     # Register blueprints
     from backend.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+
+    # Assign a per-request id for easier troubleshooting
+    @app.before_request
+    def _assign_request_id():
+        try:
+            rid = str(uuid.uuid4())
+            g.request_id = rid
+        except Exception:
+            g.request_id = None
+
+    @app.after_request
+    def _add_request_id_header(response):
+        try:
+            rid = getattr(g, 'request_id', None)
+            if rid:
+                response.headers['X-Request-ID'] = rid
+        except Exception:
+            pass
+        return response
+
+    # Serve a basic favicon to avoid 500 noise from browsers requesting /favicon.ico
+    @app.route('/favicon.ico')
+    def favicon():
+        # Serve a real favicon if available in instance/static, otherwise 204
+        try:
+            static_dir = os.path.join(app.instance_path, 'static')
+            ico_path = os.path.join(static_dir, 'favicon.ico')
+            if os.path.exists(ico_path):
+                from flask import send_file
+                return send_file(ico_path, mimetype='image/x-icon')
+        except Exception:
+            pass
+        return ('', 204)
     
     # User loader for Flask-Login
     @login_manager.user_loader
@@ -92,7 +126,12 @@ def create_app(config_name='development'):
     def handle_exception(e):
         """Global exception handler with logging"""
         tb = format_exc()
-        logger.exception(f'Unhandled exception: {str(e)}')
+        # Include request id in the logs for traceability
+        rid = getattr(g, 'request_id', None)
+        if rid:
+            logger.exception(f'Unhandled exception (rid={rid}): {str(e)}')
+        else:
+            logger.exception(f'Unhandled exception: {str(e)}')
         
         # Log to file as fallback
         try:
@@ -104,15 +143,39 @@ def create_app(config_name='development'):
         except Exception:
             pass
         
-        # Return JSON for API routes
+        # Return JSON for API routes and include request id so client can report it
         if request.path.startswith('/api'):
-            return jsonify({'ok': False, 'error': 'Internal Server Error'}), 500
+            payload = {'ok': False, 'error': 'Internal Server Error'}
+            rid = getattr(g, 'request_id', None)
+            if rid:
+                payload['request_id'] = rid
+            return jsonify(payload), 500
         
         return 'Internal Server Error', 500
     
     # Create database tables
     with app.app_context():
         _init_database(app)
+
+        # Ensure instance/static and place favicon.ico if a base64 file exists
+        try:
+            static_dir = os.path.join(app.instance_path, 'static')
+            os.makedirs(static_dir, exist_ok=True)
+            b64_src = os.path.join(os.path.dirname(__file__), 'static', 'favicon.ico.b64')
+            ico_dest = os.path.join(static_dir, 'favicon.ico')
+            if os.path.exists(b64_src) and not os.path.exists(ico_dest):
+                import base64
+                with open(b64_src, 'rb') as f:
+                    b64 = f.read()
+                try:
+                    data = base64.b64decode(b64)
+                    with open(ico_dest, 'wb') as w:
+                        w.write(data)
+                    logger.info('Wrote favicon to instance static directory')
+                except Exception as e:
+                    logger.warning(f'Could not write favicon: {str(e)}')
+        except Exception:
+            pass
     
     return app
 

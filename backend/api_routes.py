@@ -13,6 +13,15 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from backend.app import db, logger
 from backend.database_models import User, Workout, WorkoutExercise
+from flask import g
+
+
+def _json_err(message, code=400):
+    payload = {'ok': False, 'error': message}
+    rid = getattr(g, 'request_id', None)
+    if rid:
+        payload['request_id'] = rid
+    return jsonify(payload), code
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -33,17 +42,17 @@ def register():
         password = data.get('password', '')
         
         if not username or not password:
-            return jsonify({'ok': False, 'error': 'Username and password are required'}), 400
+            return _json_err('Username and password are required', 400)
         
         if len(username) < 3:
-            return jsonify({'ok': False, 'error': 'Username must be at least 3 characters'}), 400
+            return _json_err('Username must be at least 3 characters', 400)
         
         if len(password) < 8:
-            return jsonify({'ok': False, 'error': 'Password must be at least 8 characters'}), 400
+            return _json_err('Password must be at least 8 characters', 400)
         
         # Check if user exists
         if User.query.filter_by(username=username).first():
-            return jsonify({'ok': False, 'error': 'Username already exists'}), 400
+            return _json_err('Username already exists', 400)
         
         # Create user
         new_user = User(
@@ -595,3 +604,23 @@ def google_callback():
     except Exception as e:
         logger.error(f'Google callback error: {str(e)}')
         return redirect(f'http://localhost:8501/?auth=error&msg={str(e)}')
+
+
+@api_bp.route('/check_username', methods=['GET'])
+def check_username():
+    """Check if a username is available (quick client-side hint)."""
+    try:
+        uname = request.args.get('username', '').strip()
+        if not uname:
+            return _json_err('username parameter is required', 400)
+
+        exists = User.query.filter_by(username=uname).first() is not None
+        payload = {'ok': True, 'available': not exists}
+        # attach request id if present
+        rid = getattr(g, 'request_id', None)
+        if rid:
+            payload['request_id'] = rid
+        return jsonify(payload)
+    except Exception as e:
+        logger.error(f'Username check error: {str(e)}')
+        return _json_err('Could not check username', 500)

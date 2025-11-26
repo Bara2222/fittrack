@@ -17,6 +17,136 @@ if 'session' not in st.session_state:
 session = st.session_state['session']
 
 
+# --------------------------------------------------
+# Global CSS & UI helpers (visual improvements)
+# --------------------------------------------------
+_GLOBAL_CSS = r"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+html, body, [class*='css'] { font-family: 'Inter', sans-serif; color:#0f1724; background:var(--bg) !important }
+
+/* Theme variables */
+:root{
+    --bg: #0b1220;        /* dark background */
+    --surface: #0f1724;    /* card/panel surface */
+    --primary: #5cc8ff;    /* cyan-ish accent for primary actions */
+    --accent: #ff9f6b;     /* warm accent */
+    --muted: #9aa4b2;      /* muted text */
+    --success: #22c55e;
+    --danger: #f87171;
+}
+
+/* Container */
+.block-container{max-width:1000px; margin:0 auto; padding:1rem 1.5rem; background:var(--bg)}
+
+/* Main header */
+.main-header{font-size:28px; font-weight:700; color:var(--primary); background: linear-gradient(90deg,#071026,#0b1220); padding:12px 16px; border-radius:8px; box-shadow:0 6px 20px rgba(3,6,23,0.6); margin-bottom:12px; display:flex; align-items:center; gap:12px}
+.main-sub{font-size:12px; color:var(--muted); margin-left:6px}
+
+/* Sidebar */
+[data-testid="stSidebar"]{background:linear-gradient(180deg,var(--surface),#071026); padding:16px; box-shadow: inset -1px 0 0 rgba(255,255,255,0.02); border-radius:8px}
+
+/* Buttons */
+.stButton>button{border-radius:10px; padding:8px 14px; transition: transform .08s ease, box-shadow .08s ease; font-weight:600}
+.stButton>button:hover{transform:scale(1.02)}
+.stButton>button:disabled{opacity:0.6}
+
+/* Primary style (applied via inline style where possible) */
+.primary-btn{background:var(--primary); color:#fff; border:none}
+.secondary-btn{background:transparent; border:1px solid rgba(11,83,148,0.12); color:var(--primary)}
+
+/* Messages */
+.stAlert--success{border-left:4px solid var(--success)}
+.stAlert--error{border-left:4px solid var(--danger)}
+
+/* Password meter */
+.pw-meter{width:100%; height:10px; background:#eef2ff; border-radius:6px; overflow:hidden}
+.pw-meter-fill{height:100%; transition:width .18s ease}
+
+/* Tabs and cards */
+.stTabs .stButton{border-radius:8px}
+.card{background:var(--surface); border-radius:10px; padding:14px; box-shadow:0 2px 6px rgba(16,24,40,0.04);}
+
+/* Inputs and panels should avoid pure white */
+input, textarea, [role="textbox"]{background:#f6f9ff; color:var(--primary)}
+
+/* Override any pure white surfaces used by Streamlit */
+*{background-color:transparent}
+.stApp, .main, .block-container, .card, .stSidebar{background:var(--bg) !important}
+.stButton>button, .stDownloadButton>button{background:var(--primary) !important; color:#041022 !important}
+
+/* Strong overrides: ensure no pure-white surfaces and keep text readable */
+.stApp, .main, .block-container, .element-container, .stBlock, .stTextInput, .stTextArea, .stSelectbox, .stRadio, .stCheckbox, .stDateInput, .stFileUploader{
+    background: var(--surface) !important;
+    color: var(--muted) !important;
+}
+
+/* Markdown/text areas and alerts */
+.stMarkdown, .stText, .stHtml, .stMarkdown div, .stCaption, .stLabel{
+    color: #e6eef7 !important;
+    background: transparent !important;
+}
+
+/* Inputs and form controls */
+input, textarea, select, button {
+    background: #0b1624 !important;
+    color: #e6eef7 !important;
+    border: 1px solid rgba(255,255,255,0.03) !important;
+}
+
+/* Alert boxes: softer background */
+.stAlert{background: rgba(255,255,255,0.02) !important}
+.stAlert--error{background: rgba(248,113,113,0.06) !important}
+.stAlert--success{background: rgba(34,197,94,0.06) !important}
+
+/* Ensure side menu and cards use surface */
+[data-testid='stSidebar']{background:var(--surface) !important}
+.card{background:var(--surface) !important}
+
+/* Remove any hard white backgrounds from streamlit components */
+div[style*='background: white'], [style*='background:#ffffff'], [style*='background:#fff']{
+    background: var(--surface) !important;
+}
+
+</style>
+"""
+
+st.markdown(_GLOBAL_CSS, unsafe_allow_html=True)
+
+
+def _password_strength(pw: str):
+    """Return (score 0-5, color, label, width%)"""
+    if not pw:
+        return 0, '#eee', 'Very weak', 6
+    score = 0
+    if len(pw) >= 8:
+        score += 1
+    if len(pw) >= 12:
+        score += 1
+    if any(c.isdigit() for c in pw):
+        score += 1
+    if any(not c.isalnum() for c in pw):
+        score += 1
+    if any(c.isupper() for c in pw) and any(c.islower() for c in pw):
+        score += 1
+
+    if score <= 1:
+        return score, '#ef4444', 'Weak', 20 + score*10
+    if score <= 3:
+        return score, '#f97316', 'Fair', 40 + score*12
+    return score, '#10b981', 'Strong', 80 + (score-4)*4
+
+
+def render_app_header():
+    # Version from secrets if available
+    try:
+        ver = st.secrets.get('app_version', 'v2.0')
+    except Exception:
+        ver = 'v2.0'
+    st.markdown(f"<div class='main-header'>💪 FitTrack <span class='main-sub'>{ver} — Tréninkový deník</span></div>", unsafe_allow_html=True)
+
+
+
 def _safe_json(resp, default=None):
     """Return parsed JSON or a fallback dict with 'error' or default."""
     try:
@@ -30,6 +160,42 @@ def _safe_json(resp, default=None):
             pass
     return default if default is not None else {}
 
+
+def _display_api_error(resp):
+    """Centralized display for API errors: prefer server message and request id if provided."""
+    try:
+        payload = resp.json()
+    except Exception:
+        payload = None
+
+    if payload and isinstance(payload, dict):
+        msg = payload.get('error') or payload.get('message')
+        rid = payload.get('request_id') or resp.headers.get('X-Request-ID')
+        if msg:
+            if rid:
+                st.error(f"{msg} (ID: {rid})")
+                # provide copy button for the request id (JS fallback for Streamlit)
+                btn = st.button('Kopírovat ID chyby', key=f'copy_err_{rid}')
+                if btn:
+                    # Use clipboard via JS
+                    st.experimental_set_query_params()  # quick rerun-safe op
+                    js = f"navigator.clipboard.writeText('{rid}').then(()=>alert('ID zkopírováno do schránky'))"
+                    st.write(f"<script>{js}</script>", unsafe_allow_html=True)
+            else:
+                st.error(msg)
+            return
+
+    # Fallback to raw text
+    text = ''
+    try:
+        text = resp.text
+    except Exception:
+        pass
+    if text:
+        st.error(text)
+    else:
+        st.error('Neznámá chyba serveru')
+
 # Initialize login state
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
@@ -38,17 +204,36 @@ if 'user' not in st.session_state:
 if 'page' not in st.session_state:
     st.session_state['page'] = 'dashboard'
 
-# Check for Google OAuth callback
-query_params = st.query_params
+# Check for Google OAuth callback (use experimental API for broad compatibility)
+try:
+    query_params = st.experimental_get_query_params()
+except AttributeError:
+    # Fallback for very old streamlit versions
+    query_params = {}
+
 if 'auth' in query_params:
-    if query_params['auth'] == 'success':
+    # query_params values are lists when returned by Streamlit
+    auth_val = query_params.get('auth')
+    if isinstance(auth_val, list):
+        auth_val = auth_val[0] if auth_val else None
+
+    if auth_val == 'success':
         st.session_state['logged_in'] = True
         st.success('Přihlášení přes Google úspěšné!')
         # Clear query params
-        st.query_params.clear()
-    elif query_params['auth'] == 'error':
-        st.error(f"Chyba při přihlášení: {query_params.get('msg', 'Unknown error')}")
-        st.query_params.clear()
+        try:
+            st.experimental_set_query_params()
+        except Exception:
+            pass
+    elif auth_val == 'error':
+        msg = query_params.get('msg')
+        if isinstance(msg, list):
+            msg = msg[0] if msg else 'Unknown error'
+        st.error(f"Chyba při přihlášení: {msg}")
+        try:
+            st.experimental_set_query_params()
+        except Exception:
+            pass
     
 
 def check_login():
@@ -111,15 +296,21 @@ def login_page():
                 if not username or not password:
                     st.error("Vyplňte všechna pole")
                 else:
-                    r = session.post(f"{API_BASE}/login", json={'username': username, 'password': password})
-                    if r.ok:
-                        data = _safe_json(r)
-                        st.session_state['logged_in'] = True
-                        st.session_state['user'] = {'username': username, 'is_admin': data.get('is_admin', False)}
-                        st.success("Přihlášení úspěšné!")
-                        st.rerun()
+                    # Basic client-side validation
+                    if len(username) < 3 or len(username) > 30:
+                        st.error('Uživatelské jméno musí mít 3–30 znaků')
+                    elif not username.isalnum():
+                        st.error('Uživatelské jméno smí obsahovat pouze písmena a čísla')
                     else:
-                        st.error(_safe_json(r).get('error', 'Chyba při přihlášení'))
+                        r = session.post(f"{API_BASE}/login", json={'username': username, 'password': password})
+                        if r.ok:
+                            data = _safe_json(r)
+                            st.session_state['logged_in'] = True
+                            st.session_state['user'] = {'username': username, 'is_admin': data.get('is_admin', False)}
+                            st.success("Přihlášení úspěšné!")
+                            st.rerun()
+                        else:
+                            _display_api_error(r)
         
         st.markdown("---")
         st.subheader("Nebo se přihlaste přes Google")
@@ -127,8 +318,12 @@ def login_page():
             r = session.get(f"{API_BASE}/google/login")
             if r.ok:
                 auth_url = _safe_json(r).get('auth_url')
-                st.markdown(f'<meta http-equiv="refresh" content="0;url={auth_url}">', unsafe_allow_html=True)
-                st.info(f"Přesměrování na Google... Pokud se nic nestane, [klikněte sem]({auth_url})")
+                # Replace meta-refresh with JS redirect and provide fallback link
+                if auth_url:
+                    st.markdown(f"<script>window.location.href='{auth_url}';</script>", unsafe_allow_html=True)
+                    st.info(f"Přesměrování na Google... Pokud se nic nestane, [klikněte sem]({auth_url})")
+                else:
+                    st.error('Chyba při získávání adresy pro Google přihlášení')
             else:
                 st.error("Chyba při inicializaci Google přihlášení")
     
@@ -145,14 +340,37 @@ def login_page():
                     st.error("Vyplňte všechna pole")
                 elif new_password != confirm_password:
                     st.error("Hesla se neshodují")
-                elif len(new_password) < 8:
-                    st.error("Heslo musí mít minimálně 8 znaků")
                 else:
-                    r = session.post(f"{API_BASE}/register", json={'username': new_username, 'password': new_password})
-                    if r.ok:
-                        st.success("Registrace úspěšná! Nyní se můžete přihlásit.")
+                    # Client-side validation for username/password
+                    import re
+                    if not (3 <= len(new_username) <= 30):
+                        st.error('Uživatelské jméno musí mít 3–30 znaků')
+                    elif not re.match(r'^[A-Za-z0-9._-]+$', new_username):
+                        st.error('Uživatelské jméno smí obsahovat písmena, čísla, tečky, podtržítka a pomlčky')
+                    elif len(new_password) < 8:
+                        st.error('Heslo musí mít minimálně 8 znaků')
                     else:
-                        st.error(_safe_json(r).get('error', 'Chyba při registraci'))
+                        # Check username availability before attempting registration
+                        proceed = True
+                        try:
+                            cu = session.get(f"{API_BASE}/check_username", params={'username': new_username}, timeout=3)
+                            if cu.ok:
+                                info = _safe_json(cu)
+                                if not info.get('available', True):
+                                    st.error('Uživatelské jméno již existuje')
+                                    proceed = False
+                            else:
+                                # don't block registration on check failure; show warning
+                                st.warning('Kontrola uživatelského jména selhala, pokračuji v registraci')
+                        except Exception:
+                            st.warning('Kontrola uživatelského jména selhala, pokračuji v registraci')
+
+                        if proceed:
+                            r = session.post(f"{API_BASE}/register", json={'username': new_username, 'password': new_password})
+                            if r.ok:
+                                st.success("Registrace úspěšná! Nyní se můžete přihlásit.")
+                            else:
+                                _display_api_error(r)
 
 def dashboard_page():
     st.markdown('<div class="main-header">📊 Dashboard</div>', unsafe_allow_html=True)
@@ -223,6 +441,68 @@ def dashboard_page():
                         st.rerun()
         else:
             st.info("Zatím nemáte žádné tréninky. Začněte rychlým startem nebo vytvořte nový trénink!")
+
+
+def stats_page():
+    """New statistics page: basic aggregated charts and top exercises."""
+    st.markdown('<div class="main-header">📈 Statistiky a grafy cviků</div>', unsafe_allow_html=True)
+
+    r = session.get(f"{API_BASE}/workouts")
+    if not r.ok:
+        st.error('Nepodařilo se načíst tréninky pro statistiky')
+        return
+
+    workouts = _safe_json(r).get('workouts', [])
+    if not workouts:
+        st.info('Zatím není dost dat pro statistiky')
+        return
+
+    # Aggregate exercises by fetching details (small datasets expected)
+    ex_rows = []
+    for w in workouts:
+        try:
+            wr = session.get(f"{API_BASE}/workouts/{w['id']}")
+            if not wr.ok:
+                continue
+            detail = _safe_json(wr).get('workout', {})
+            wdate = detail.get('date')
+            for e in detail.get('exercises', []):
+                ex_rows.append({'date': wdate, 'name': e.get('name'), 'sets': e.get('sets'), 'reps': e.get('reps')})
+        except Exception:
+            continue
+
+    try:
+        df = pd.DataFrame(ex_rows)
+    except Exception:
+        st.error('Nepodařilo se vytvořit DataFrame pro statistiky')
+        return
+
+    if df.empty:
+        st.info('Žádné cviky k analýze')
+        return
+
+    st.subheader('Top cviky podle počtu provedení')
+    top = df['name'].value_counts().head(12)
+    st.bar_chart(top)
+
+    st.subheader('Trend počtu tréninků podle data')
+    try:
+        dates = pd.Series([w['date'] for w in workouts])
+        counts = dates.value_counts().sort_index()
+        st.line_chart(counts)
+    except Exception:
+        st.info('Nelze vykreslit časovou řadu tréninků')
+
+    st.subheader('Průměrné opakování (reps) pro top cviky')
+    avg_reps = df.groupby('name')['reps'].mean().sort_values(ascending=False).head(12)
+    st.bar_chart(avg_reps)
+
+    with st.expander('Stáhnout surová data (CSV)'):
+        try:
+            csv_blob = df.to_csv(index=False)
+            st.download_button('Stáhnout CSV', data=csv_blob, file_name=f'stats_exercises_{date.today().isoformat()}.csv', mime='text/csv')
+        except Exception:
+            st.write('Export selhal')
 
 def workouts_page():
     st.markdown('<div class="main-header">💪 Moje tréninky</div>', unsafe_allow_html=True)
@@ -421,7 +701,7 @@ def catalog_page():
     catalog = _safe_json(r).get('exercises', [])
     
     st.write("Základní cviky pro inspiraci:")
-    # Load user's workouts so they can choose where to add an exercise
+    # Load user's workouts so they can choose where to add exercises
     wr = session.get(f"{API_BASE}/workouts")
     workouts = []
     workout_map = {}
@@ -437,62 +717,52 @@ def catalog_page():
     create_new_label = '🔹 Vytvořit nový trénink (dnešek)'
 
     target_options = [create_new_label] + list(workout_map.keys())
-    selected_target = st.selectbox('Vyberte trénink, do kterého přidat cvik:', target_options)
+    selected_target = st.selectbox('Vyberte trénink, do kterého přidat cviky:', target_options)
 
-    cols = st.columns(3)
-    for idx, exercise in enumerate(catalog):
-        with cols[idx % 3]:
-            st.markdown(f"✅ **{exercise}**")
-            # allow user to choose sets/reps before adding
-            sets_key = f"sets_{idx}"
-            reps_key = f"reps_{idx}"
-            # Ensure default values exist in session state before creating widgets
-            st.session_state.setdefault(sets_key, 3)
-            st.session_state.setdefault(reps_key, 10)
-            # Create widgets using the session state key only (avoid passing value= to prevent mixed initialization warnings)
-            st.number_input('Série', min_value=1, max_value=10, key=sets_key)
-            st.number_input('Opakování', min_value=1, max_value=100, key=reps_key)
-            if st.button('Přidat do tréninku', key=f"add_{idx}"):
-                # Determine workout id
-                if selected_target == create_new_label:
-                    # create new workout
-                    payload = {'date': date.today().isoformat(), 'note': f'Přidáno z katalogu: {exercise}', 'exercises': []}
-                    cr = session.post(f"{API_BASE}/workouts", json=payload)
-                    if cr.ok:
-                        wid = _safe_json(cr).get('id')
-                    else:
-                        st.error('Nepodařilo se vytvořit nový trénink')
-                        continue
+    # Multi-select for catalog
+    chosen = st.multiselect('Vyberte cviky (můžete vybrat více):', catalog)
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        default_sets = st.number_input('Série (pro vybrané)', min_value=1, max_value=10, value=3)
+    with col2:
+        default_reps = st.number_input('Opakování (pro vybrané)', min_value=1, max_value=100, value=10)
+
+    if st.button('Přidat vybrané do tréninku'):
+        if not chosen:
+            st.error('Vyberte alespoň jeden cvik')
+        else:
+            # Determine workout id (create if requested)
+            if selected_target == create_new_label:
+                payload = {'date': date.today().isoformat(), 'note': f'Přidáno z katalogu: {", ".join(chosen)}', 'exercises': []}
+                cr = session.post(f"{API_BASE}/workouts", json=payload)
+                if cr.ok:
+                    wid = _safe_json(cr).get('id')
                 else:
-                    wid = workout_map.get(selected_target)
+                    st.error('Nepodařilo se vytvořit nový trénink')
+                    wid = None
+            else:
+                wid = workout_map.get(selected_target)
 
-                # Add exercise to workout using chosen sets/reps
-                ex_payload = {'name': exercise, 'sets': int(st.session_state.get(sets_key, 3)), 'reps': int(st.session_state.get(reps_key, 10))}
-                ae = session.post(f"{API_BASE}/exercises/{wid}/add", json=ex_payload)
-                if ae.ok:
-                    st.success(f"Cvik '{exercise}' přidán do tréninku (ID {wid}).")
-                    # refresh workouts listing for next actions
-                    try:
-                        wr = session.get(f"{API_BASE}/workouts")
-                        if wr.ok:
-                            workouts = _safe_json(wr).get('workouts', [])
-                            workout_map = {}
-                            for w in workouts:
-                                note = (w.get('note') or 'Bez poznámky')
-                                short = note if len(note) <= 30 else note[:27] + '...'
-                                lbl = f"{w['date']} — {short} ({w['exercise_count']} cviků)"
-                                workout_map[lbl] = w['id']
-                    except Exception:
-                        pass
-                    # redirect to workout detail page
+            if wid:
+                errors = []
+                for ex in chosen:
+                    ex_payload = {'name': ex, 'sets': int(default_sets), 'reps': int(default_reps)}
+                    ae = session.post(f"{API_BASE}/exercises/{wid}/add", json=ex_payload)
+                    if not ae.ok:
+                        try:
+                            errors.append(_safe_json(ae).get('error', f'Chyba při přidávání {ex}'))
+                        except Exception:
+                            errors.append(f'Chyba při přidávání {ex}')
+
+                if not errors:
+                    st.success(f"{len(chosen)} cviků bylo přidáno do tréninku (ID {wid}).")
                     st.session_state['selected_workout'] = wid
                     st.session_state['page'] = 'workout_detail'
                     st.rerun()
                 else:
-                    try:
-                        st.error(_safe_json(ae).get('error', 'Chyba při přidávání cviku'))
-                    except Exception:
-                        st.error('Chyba při přidávání cviku')
+                    for e in errors:
+                        st.error(e)
 
 def export_page():
     st.markdown('<div class="main-header">📥 Export dat</div>', unsafe_allow_html=True)
@@ -626,6 +896,7 @@ if st.session_state.get('logged_in') and st.session_state.get('user') and not st
     profile_form()
 
 # Sidebar navigation
+render_app_header()
 with st.sidebar:
     st.title("💪 FitTrack")
     user_info = st.session_state.get('user', {})
@@ -659,6 +930,7 @@ with st.sidebar:
     
     pages = {
         'dashboard': '📊 Dashboard',
+    'stats': '📈 Statistiky',
         'workouts': '💪 Moje tréninky',
         'new_workout': '➕ Nový trénink',
         'catalog': '📚 Katalog cviků',
