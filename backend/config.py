@@ -14,7 +14,9 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'tajny_klic_CHANGE_IN_PRODUCTION')
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///instance/db.sqlite3')
+    _basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    _db_path = os.path.join(_basedir, 'instance', 'db.sqlite3')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', f'sqlite:///{_db_path}')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # CSRF Protection

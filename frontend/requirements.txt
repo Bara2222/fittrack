@@ -9,3 +9,9 @@ requests==2.31.0
 
 # Data Processing
 pandas==2.1.4
+
+# Interactive Charts
+plotly==6.5.0
+
+# Image Processing
+Pillow

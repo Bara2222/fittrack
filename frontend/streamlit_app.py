@@ -1,8 +1,11 @@
 import streamlit as st
 import requests
 import pandas as pd
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import webbrowser
+import plotly.express as px
+import plotly.graph_objects as go
+from collections import defaultdict, Counter
 
 # Use secrets if available, otherwise default to localhost
 try:
@@ -22,90 +25,359 @@ session = st.session_state['session']
 # --------------------------------------------------
 _GLOBAL_CSS = r"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-html, body, [class*='css'] { font-family: 'Inter', sans-serif; color:#0f1724; background:var(--bg) !important }
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+html, body, [class*='css'] { font-family: 'Poppins', sans-serif; color:#1a1a1a; background:var(--bg) !important }
 
-/* Theme variables */
+/* Theme variables - Black & Yellow */
 :root{
-    --bg: #0b1220;        /* dark background */
-    --surface: #0f1724;    /* card/panel surface */
-    --primary: #5cc8ff;    /* cyan-ish accent for primary actions */
-    --accent: #ff9f6b;     /* warm accent */
-    --muted: #9aa4b2;      /* muted text */
-    --success: #22c55e;
-    --danger: #f87171;
+    --bg: #000000;           /* pure black background */
+    --surface: #1c1c1c;      /* dark surface with slight lift */
+    --primary: #ffd700;      /* vibrant gold/yellow */
+    --secondary: #ffffff;    /* white for text */
+    --accent: #ffed4e;       /* lighter yellow accent */
+    --muted: #b8b8b8;        /* lighter gray for better readability */
+    --success: #4ade80;
+    --danger: #ef4444;
+    --border: #ffd700;       /* yellow borders */
+    --text-primary: #ffffff; /* primary white text */
+    --text-secondary: #000000; /* black text for yellow backgrounds */
 }
 
 /* Container */
-.block-container{max-width:1000px; margin:0 auto; padding:1rem 1.5rem; background:var(--bg)}
+.block-container{
+    max-width:1200px; 
+    margin:0 auto; 
+    padding:2rem 1.5rem; 
+    background:var(--bg);
+    position: relative;
+}
+.block-container::before{
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,215,0,0.03) 50px, rgba(255,215,0,0.03) 51px),
+        repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255,215,0,0.03) 50px, rgba(255,215,0,0.03) 51px);
+    pointer-events: none;
+    z-index: -1;
+}
 
 /* Main header */
-.main-header{font-size:28px; font-weight:700; color:var(--primary); background: linear-gradient(90deg,#071026,#0b1220); padding:12px 16px; border-radius:8px; box-shadow:0 6px 20px rgba(3,6,23,0.6); margin-bottom:12px; display:flex; align-items:center; gap:12px}
-.main-sub{font-size:12px; color:var(--muted); margin-left:6px}
+.main-header{
+    font-size:36px; 
+    font-weight:800; 
+    color:var(--text-secondary); 
+    background: linear-gradient(135deg, var(--primary), var(--accent)); 
+    padding:24px 32px; 
+    border-radius:20px; 
+    box-shadow:0 8px 32px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2); 
+    margin-bottom:32px; 
+    display:flex; 
+    align-items:center; 
+    gap:16px;
+    border: 3px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+}
+.main-header::before{
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+@keyframes shine {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+.main-sub{font-size:14px; color:var(--text-secondary); margin-left:8px; font-weight:500; opacity:0.9}
 
 /* Sidebar */
-[data-testid="stSidebar"]{background:linear-gradient(180deg,var(--surface),#071026); padding:16px; box-shadow: inset -1px 0 0 rgba(255,255,255,0.02); border-radius:8px}
+[data-testid="stSidebar"]{
+    background: linear-gradient(180deg, #1c1c1c, #0a0a0a);
+    padding:24px 16px; 
+    box-shadow: 0 0 30px rgba(255,215,0,0.3); 
+    border-right: 2px solid var(--primary);
+}
+[data-testid="stSidebar"] h1{
+    color: var(--primary) !important;
+    text-shadow: 0 0 20px rgba(255,215,0,0.8);
+}
 
 /* Buttons */
-.stButton>button{border-radius:10px; padding:8px 14px; transition: transform .08s ease, box-shadow .08s ease; font-weight:600}
-.stButton>button:hover{transform:scale(1.02)}
-.stButton>button:disabled{opacity:0.6}
+.stButton>button{
+    border-radius:12px; 
+    padding:12px 24px; 
+    transition: all .3s ease; 
+    font-weight:600;
+    font-size:15px;
+    border:none;
+    background: var(--primary) !important;
+    color: #000000 !important;
+    box-shadow: 0 2px 8px rgba(255,215,0,0.4);
+}
+.stButton>button:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255,215,0,0.6);
+    background: var(--accent) !important;
+}
+.stButton>button:disabled{opacity:0.5}
 
-/* Primary style (applied via inline style where possible) */
-.primary-btn{background:var(--primary); color:#fff; border:none}
-.secondary-btn{background:transparent; border:1px solid rgba(11,83,148,0.12); color:var(--primary)}
+/* Secondary buttons */
+.stButton>button.secondary{
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    box-shadow: none;
+}
+.stButton>button.secondary:hover{
+    background: var(--primary);
+    color: white;
+}
 
 /* Messages */
-.stAlert--success{border-left:4px solid var(--success)}
-.stAlert--error{border-left:4px solid var(--danger)}
-
-/* Password meter */
-.pw-meter{width:100%; height:10px; background:#eef2ff; border-radius:6px; overflow:hidden}
-.pw-meter-fill{height:100%; transition:width .18s ease}
-
-/* Tabs and cards */
-.stTabs .stButton{border-radius:8px}
-.card{background:var(--surface); border-radius:10px; padding:14px; box-shadow:0 2px 6px rgba(16,24,40,0.04);}
-
-/* Inputs and panels should avoid pure white */
-input, textarea, [role="textbox"]{background:#f6f9ff; color:var(--primary)}
-
-/* Override any pure white surfaces used by Streamlit */
-*{background-color:transparent}
-.stApp, .main, .block-container, .card, .stSidebar{background:var(--bg) !important}
-.stButton>button, .stDownloadButton>button{background:var(--primary) !important; color:#041022 !important}
-
-/* Strong overrides: ensure no pure-white surfaces and keep text readable */
-.stApp, .main, .block-container, .element-container, .stBlock, .stTextInput, .stTextArea, .stSelectbox, .stRadio, .stCheckbox, .stDateInput, .stFileUploader{
-    background: var(--surface) !important;
-    color: var(--muted) !important;
+.stAlert{
+    border-radius:12px;
+    padding:16px;
+    border-left: 4px solid var(--primary);
+}
+.stAlert--success{
+    background: rgba(72,187,120,0.1);
+    border-left-color: var(--success);
+    color: var(--secondary);
+}
+.stAlert--error{
+    background: rgba(245,101,101,0.1);
+    border-left-color: var(--danger);
+    color: var(--secondary);
+}
+.stAlert--info{
+    background: rgba(255,215,0,0.1);
+    border-left-color: var(--primary);
+    color: var(--secondary);
 }
 
-/* Markdown/text areas and alerts */
-.stMarkdown, .stText, .stHtml, .stMarkdown div, .stCaption, .stLabel{
-    color: #e6eef7 !important;
+/* Tabs */
+.stTabs [data-baseweb="tab-list"]{
+    gap:12px;
+    background: rgba(255,215,0,0.05);
+    padding:12px;
+    border-radius:16px;
+    border: 2px solid rgba(255,215,0,0.2);
+}
+.stTabs [data-baseweb="tab"]{
+    border-radius:12px;
+    padding:14px 28px;
+    font-weight:700;
+    color: var(--muted);
+    border: 2px solid transparent;
+    transition: all .3s ease;
+}
+.stTabs [data-baseweb="tab"]:hover{
+    background: rgba(255,215,0,0.1);
+    border-color: rgba(255,215,0,0.3);
+    color: var(--primary);
+}
+.stTabs [aria-selected="true"]{
+    background: linear-gradient(135deg, var(--primary), var(--accent)) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 12px rgba(255,215,0,0.4);
+    font-weight: 800;
+}
+
+/* Cards */
+.card{
+    background: linear-gradient(145deg, #1c1c1c, #141414); 
+    border-radius:20px; 
+    padding:28px; 
+    box-shadow:0 4px 20px rgba(255,215,0,0.2), inset 0 1px 0 rgba(255,215,0,0.1);
+    border: 2px solid rgba(255,215,0,0.3);
+    transition: all .4s ease;
+    position: relative;
+}
+.card::before{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 20px;
+    padding: 2px;
+    background: linear-gradient(135deg, var(--primary), transparent, var(--accent));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .4s ease;
+}
+.card:hover{
+    box-shadow:0 8px 32px rgba(255,215,0,0.4), 0 0 60px rgba(255,215,0,0.2);
+    transform: translateY(-4px) scale(1.02);
+    border-color: var(--primary);
+}
+.card:hover::before{
+    opacity: 1;
+}
+
+/* Override Streamlit defaults */
+.stApp{background:var(--bg) !important}
+.main{background:var(--bg) !important}
+.block-container{background:var(--bg) !important}
+
+/* Markdown/text */
+.stMarkdown, .stText, .stHtml, .stMarkdown div, .stCaption{
+    color: var(--text-primary) !important;
     background: transparent !important;
+    line-height: 1.6;
+}
+.stMarkdown h1{
+    color: var(--primary) !important;
+    font-weight: 800;
+    font-size: 2.5rem;
+    text-shadow: 0 0 30px rgba(255,215,0,0.6);
+    margin-bottom: 1rem;
+}
+.stMarkdown h2{
+    color: var(--accent) !important;
+    font-weight: 700;
+    font-size: 2rem;
+    text-shadow: 0 0 20px rgba(255,237,78,0.5);
+    margin-bottom: 0.8rem;
+}
+.stMarkdown h3{
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    font-size: 1.5rem;
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+    margin-bottom: 0.6rem;
+}
+.stMarkdown p{
+    color: var(--muted) !important;
+    font-size: 1rem;
+}
+.stMarkdown a{
+    color: var(--primary) !important;
+    text-decoration: none;
+    font-weight:600;
+    border-bottom: 2px solid transparent;
+    transition: all .3s ease;
+}
+.stMarkdown a:hover{
+    border-bottom-color: var(--primary);
+    text-shadow: 0 0 10px rgba(255,215,0,0.6);
 }
 
-/* Inputs and form controls */
-input, textarea, select, button {
-    background: #0b1624 !important;
-    color: #e6eef7 !important;
-    border: 1px solid rgba(255,255,255,0.03) !important;
+/* Form inputs */
+.stTextInput>div>div>input, 
+.stTextArea>div>div>textarea,
+.stSelectbox>div>div>div,
+.stNumberInput>div>div>input{
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    border: 2px solid rgba(255,215,0,0.3) !important;
+    border-radius: 12px !important;
+    color: var(--text-primary) !important;
+    padding:14px 16px !important;
+    font-size:16px !important;
+    transition: all .3s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+.stTextInput>div>div>input:focus,
+.stTextArea>div>div>textarea:focus{
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 4px rgba(255,215,0,0.3), inset 0 2px 4px rgba(0,0,0,0.3) !important;
+    background: linear-gradient(145deg, #303030, #202020) !important;
 }
 
-/* Alert boxes: softer background */
-.stAlert{background: rgba(255,255,255,0.02) !important}
-.stAlert--error{background: rgba(248,113,113,0.06) !important}
-.stAlert--success{background: rgba(34,197,94,0.06) !important}
+/* Labels */
+.stTextInput>label, .stTextArea>label, .stSelectbox>label, .stNumberInput>label{
+    color: var(--primary) !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    margin-bottom: 10px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
-/* Ensure side menu and cards use surface */
-[data-testid='stSidebar']{background:var(--surface) !important}
-.card{background:var(--surface) !important}
+/* Sidebar elements */
+[data-testid="stSidebar"] .stButton>button{
+    width:100%;
+    text-align:left;
+    justify-content:flex-start;
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    box-shadow:none;
+    border: 2px solid rgba(255,215,0,0.2) !important;
+    border-radius: 12px;
+}
+[data-testid="stSidebar"] .stButton>button:hover{
+    background: rgba(255,215,0,0.15) !important;
+    border-color: var(--primary) !important;
+    transform: translateX(6px);
+    box-shadow: 0 0 20px rgba(255,215,0,0.3) !important;
+    color: var(--primary) !important;
+}
 
-/* Remove any hard white backgrounds from streamlit components */
-div[style*='background: white'], [style*='background:#ffffff'], [style*='background:#fff']{
-    background: var(--surface) !important;
+/* Stat boxes */
+.stat-box{
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000000;
+    padding:32px;
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 8px 32px rgba(255,215,0,0.5), inset 0 -2px 0 rgba(0,0,0,0.1);
+    border: 3px solid #000000;
+    position: relative;
+    overflow: hidden;
+}
+.stat-box::before{
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+.stat-number{
+    font-size:56px;
+    font-weight:900;
+    margin-bottom:12px;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+    position: relative;
+}
+.stat-label{
+    font-size:16px;
+    font-weight:700;
+    opacity:0.9;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    position: relative;
+}
+
+/* Expander */
+.streamlit-expanderHeader{
+    background: var(--surface);
+    border-radius:12px;
+    padding:16px;
+    border: 1px solid var(--border);
+    font-weight:600;
+    color: var(--secondary);
+}
+.streamlit-expanderHeader:hover{
+    border-color: var(--primary);
+    background: rgba(255,215,0,0.05);
 }
 
 </style>
@@ -178,7 +450,6 @@ def _display_api_error(resp):
                 btn = st.button('Kopírovat ID chyby', key=f'copy_err_{rid}')
                 if btn:
                     # Use clipboard via JS
-                    st.experimental_set_query_params()  # quick rerun-safe op
                     js = f"navigator.clipboard.writeText('{rid}').then(()=>alert('ID zkopírováno do schránky'))"
                     st.write(f"<script>{js}</script>", unsafe_allow_html=True)
             else:
@@ -203,10 +474,12 @@ if 'user' not in st.session_state:
     st.session_state['user'] = None
 if 'page' not in st.session_state:
     st.session_state['page'] = 'dashboard'
+if 'show_login_form' not in st.session_state:
+    st.session_state['show_login_form'] = False
 
-# Check for Google OAuth callback (use experimental API for broad compatibility)
+# Check for Google OAuth callback
 try:
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params
 except AttributeError:
     # Fallback for very old streamlit versions
     query_params = {}
@@ -222,7 +495,7 @@ if 'auth' in query_params:
         st.success('Přihlášení přes Google úspěšné!')
         # Clear query params
         try:
-            st.experimental_set_query_params()
+            st.query_params.clear()
         except Exception:
             pass
     elif auth_val == 'error':
@@ -231,7 +504,7 @@ if 'auth' in query_params:
             msg = msg[0] if msg else 'Unknown error'
         st.error(f"Chyba při přihlášení: {msg}")
         try:
-            st.experimental_set_query_params()
+            st.query_params.clear()
         except Exception:
             pass
     
@@ -239,7 +512,7 @@ if 'auth' in query_params:
 def check_login():
     """Check if user is logged in by calling /api/me"""
     try:
-        r = session.get(f"{API_BASE}/me")
+        r = session.get(f"{API_BASE}/me", timeout=2)
         if r.ok:
             st.session_state['logged_in'] = True
             st.session_state['user'] = _safe_json(r).get('user')
@@ -264,7 +537,7 @@ def profile_form():
         if submitted:
             payload = {'age': int(age), 'height_cm': float(height), 'weight_kg': float(weight)}
             try:
-                r = session.post(f"{API_BASE}/profile", json=payload)
+                r = session.post(f"{API_BASE}/profile", json=payload, timeout=5)
                 if r.ok:
                     st.success('Profil uložen.')
                     # update local user state
@@ -278,6 +551,63 @@ def profile_form():
             except Exception:
                 st.error('Nepodařilo se kontaktovat API')
     st.stop()
+
+
+def landing_page():
+    """Landing page with intro and login button."""
+    # Check if we should show login form instead
+    if st.session_state.get('show_login_form', False):
+        login_page()
+        return
+
+    # Hero section
+    st.markdown("""
+    <div style="text-align: center; padding: 4rem 0;">
+        <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(90deg, #5cc8ff, #ff9f6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            FitTrack
+        </h1>
+        <p style="font-size: 1.25rem; color: #9aa4b2; max-width: 600px; margin: 0 auto 2rem;">
+            Váš osobní tréninkový deník. Sledujte své pokroky, plánujte cvičení a dosahujte svých cílů efektivněji.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Features grid
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("""
+        <div class="card" style="text-align: center; height: 100%;">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">📊</div>
+            <h3 style="color: #e6eef7;">Statistiky</h3>
+            <p style="color: #9aa4b2;">Přehledné grafy a analýzy vašich výkonů.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div class="card" style="text-align: center; height: 100%;">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">💪</div>
+            <h3 style="color: #e6eef7;">Tréninky</h3>
+            <p style="color: #9aa4b2;">Databáze cviků a možnost tvorby vlastních plánů.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown("""
+        <div class="card" style="text-align: center; height: 100%;">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">📱</div>
+            <h3 style="color: #e6eef7;">Mobilní</h3>
+            <p style="color: #9aa4b2;">Přístupné odkudkoliv, optimalizované pro telefon.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
+
+    # Call to action
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        if st.button("🚀 Začít cvičit (Přihlásit se)", use_container_width=True):
+            st.session_state['show_login_form'] = True
+            st.rerun()
+
 
 def login_page():
     st.markdown('<div class="main-header">💪 FitTrack</div>', unsafe_allow_html=True)
@@ -302,7 +632,7 @@ def login_page():
                     elif not username.isalnum():
                         st.error('Uživatelské jméno smí obsahovat pouze písmena a čísla')
                     else:
-                        r = session.post(f"{API_BASE}/login", json={'username': username, 'password': password})
+                        r = session.post(f"{API_BASE}/login", json={'username': username, 'password': password}, timeout=5)
                         if r.ok:
                             data = _safe_json(r)
                             st.session_state['logged_in'] = True
@@ -315,7 +645,7 @@ def login_page():
         st.markdown("---")
         st.subheader("Nebo se přihlaste přes Google")
         if st.button("🔐 Přihlásit se přes Google", use_container_width=True):
-            r = session.get(f"{API_BASE}/google/login")
+            r = session.get(f"{API_BASE}/google/login", timeout=5)
             if r.ok:
                 auth_url = _safe_json(r).get('auth_url')
                 # Replace meta-refresh with JS redirect and provide fallback link
@@ -353,7 +683,7 @@ def login_page():
                         # Check username availability before attempting registration
                         proceed = True
                         try:
-                            cu = session.get(f"{API_BASE}/check_username", params={'username': new_username}, timeout=3)
+                            cu = requests.get(f"{API_BASE}/check_username", params={'username': new_username}, timeout=3)
                             if cu.ok:
                                 info = _safe_json(cu)
                                 if not info.get('available', True):
@@ -366,16 +696,17 @@ def login_page():
                             st.warning('Kontrola uživatelského jména selhala, pokračuji v registraci')
 
                         if proceed:
-                            r = session.post(f"{API_BASE}/register", json={'username': new_username, 'password': new_password})
+                            r = session.post(f"{API_BASE}/register", json={'username': new_username, 'password': new_password}, timeout=5)
                             if r.ok:
-                                st.success("Registrace úspěšná! Nyní se můžete přihlásit.")
+                                st.success("✅ Registrace úspěšná! Nyní se můžete přihlásit.")
+                                st.balloons()
                             else:
                                 _display_api_error(r)
 
 def dashboard_page():
     st.markdown('<div class="main-header">📊 Dashboard</div>', unsafe_allow_html=True)
     # Stats
-    r = session.get(f"{API_BASE}/stats")
+    r = session.get(f"{API_BASE}/stats", timeout=5)
     if r.ok:
         stats = _safe_json(r).get('stats', {})
         col1, col2 = st.columns(2)
@@ -402,7 +733,7 @@ def dashboard_page():
     
     with col1:
         if st.button("🟢 Začátečník", use_container_width=True):
-            r = session.post(f"{API_BASE}/quickstart/zacatecnik")
+            r = session.post(f"{API_BASE}/quickstart/zacatecnik", timeout=5)
             if r.ok:
                 st.success("Trénink vytvořen!")
                 st.session_state['page'] = 'workouts'
@@ -410,7 +741,7 @@ def dashboard_page():
     
     with col2:
         if st.button("🟡 Pokročilý", use_container_width=True):
-            r = session.post(f"{API_BASE}/quickstart/pokracily")
+            r = session.post(f"{API_BASE}/quickstart/pokracily", timeout=5)
             if r.ok:
                 st.success("Trénink vytvořen!")
                 st.session_state['page'] = 'workouts'
@@ -418,7 +749,7 @@ def dashboard_page():
     
     with col3:
         if st.button("🔴 Expert", use_container_width=True):
-            r = session.post(f"{API_BASE}/quickstart/expert")
+            r = session.post(f"{API_BASE}/quickstart/expert", timeout=5)
             if r.ok:
                 st.success("Trénink vytvořen!")
                 st.session_state['page'] = 'workouts'
@@ -428,7 +759,7 @@ def dashboard_page():
     
     # Recent workouts
     st.subheader("📅 Poslední tréninky")
-    r = session.get(f"{API_BASE}/workouts")
+    r = session.get(f"{API_BASE}/workouts", timeout=5)
     if r.ok:
         workouts = _safe_json(r).get('workouts', [])[:5]
         if workouts:
@@ -444,65 +775,342 @@ def dashboard_page():
 
 
 def stats_page():
-    """New statistics page: basic aggregated charts and top exercises."""
-    st.markdown('<div class="main-header">📈 Statistiky a grafy cviků</div>', unsafe_allow_html=True)
+    """Advanced statistics page with interactive Plotly charts."""
+    st.markdown('<div class="main-header">📈 Pokročilé statistiky & analýzy</div>', unsafe_allow_html=True)
 
-    r = session.get(f"{API_BASE}/workouts")
+    r = session.get(f"{API_BASE}/workouts", timeout=5)
     if not r.ok:
         st.error('Nepodařilo se načíst tréninky pro statistiky')
         return
 
     workouts = _safe_json(r).get('workouts', [])
     if not workouts:
-        st.info('Zatím není dost dat pro statistiky')
+        st.info('🏋️ Zatím není dost dat pro statistiky. Začněte vytvářením tréninků!')
         return
 
-    # Aggregate exercises by fetching details (small datasets expected)
+    # Collect all exercise data with details
     ex_rows = []
     for w in workouts:
         try:
-            wr = session.get(f"{API_BASE}/workouts/{w['id']}")
+            wr = session.get(f"{API_BASE}/workouts/{w['id']}", timeout=5)
             if not wr.ok:
                 continue
             detail = _safe_json(wr).get('workout', {})
             wdate = detail.get('date')
             for e in detail.get('exercises', []):
-                ex_rows.append({'date': wdate, 'name': e.get('name'), 'sets': e.get('sets'), 'reps': e.get('reps')})
+                ex_rows.append({
+                    'date': wdate,
+                    'name': e.get('name'),
+                    'sets': e.get('sets', 0),
+                    'reps': e.get('reps', 0),
+                    'weight': e.get('weight', 0) or 0,
+                    'volume': (e.get('sets', 0) * e.get('reps', 0) * (e.get('weight', 0) or 0))
+                })
         except Exception:
             continue
 
-    try:
-        df = pd.DataFrame(ex_rows)
-    except Exception:
-        st.error('Nepodařilo se vytvořit DataFrame pro statistiky')
-        return
-
-    if df.empty:
+    if not ex_rows:
         st.info('Žádné cviky k analýze')
         return
 
-    st.subheader('Top cviky podle počtu provedení')
-    top = df['name'].value_counts().head(12)
-    st.bar_chart(top)
+    df = pd.DataFrame(ex_rows)
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values('date')
 
-    st.subheader('Trend počtu tréninků podle data')
-    try:
-        dates = pd.Series([w['date'] for w in workouts])
-        counts = dates.value_counts().sort_index()
-        st.line_chart(counts)
-    except Exception:
-        st.info('Nelze vykreslit časovou řadu tréninků')
+    # === KEY METRICS ===
+    st.markdown("## 📊 Klíčové metriky")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    total_workouts = len(workouts)
+    total_exercises = len(df)
+    total_volume = df['volume'].sum()
+    unique_exercises = df['name'].nunique()
+    
+    with col1:
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-number">{total_workouts}</div>
+            <div class="stat-label">Celkem tréninků</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-number">{total_exercises}</div>
+            <div class="stat-label">Provedených cviků</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-number">{int(total_volume):,}</div>
+            <div class="stat-label">Celkový objem (kg)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-number">{unique_exercises}</div>
+            <div class="stat-label">Různých cviků</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.subheader('Průměrné opakování (reps) pro top cviky')
-    avg_reps = df.groupby('name')['reps'].mean().sort_values(ascending=False).head(12)
-    st.bar_chart(avg_reps)
+    st.markdown("---")
 
-    with st.expander('Stáhnout surová data (CSV)'):
+    # === WORKOUT FREQUENCY CHART ===
+    st.markdown("## 📅 Frekvence tréninků v čase")
+    
+    workout_dates = pd.to_datetime([w['date'] for w in workouts])
+    workout_freq = workout_dates.value_counts().sort_index().reset_index()
+    workout_freq.columns = ['Datum', 'Počet']
+    
+    fig_freq = px.line(workout_freq, x='Datum', y='Počet', 
+                       title='Tréninky v čase',
+                       labels={'Datum': 'Datum', 'Počet': 'Počet tréninků'},
+                       template='plotly_dark',
+                       line_shape='spline')
+    fig_freq.update_traces(line_color='#FFD700', line_width=3, fill='tozeroy', fillcolor='rgba(255,215,0,0.2)')
+    fig_freq.update_layout(
+        plot_bgcolor='#1c1c1c',
+        paper_bgcolor='#000000',
+        font_color='#ffffff',
+        title_font_size=20,
+        hovermode='x unified'
+    )
+    st.plotly_chart(fig_freq, use_container_width=True)
+
+    st.markdown("---")
+
+    # === TOP EXERCISES BY COUNT ===
+    st.markdown("## 🏆 Nejčastější cviky")
+    
+    exercise_counts = df['name'].value_counts().head(10).reset_index()
+    exercise_counts.columns = ['Cvik', 'Počet']
+    
+    fig_top = px.bar(exercise_counts, x='Počet', y='Cvik', 
+                     orientation='h',
+                     title='Top 10 nejčastějších cviků',
+                     template='plotly_dark',
+                     color='Počet',
+                     color_continuous_scale=['#FFD700', '#FFED4E'])
+    fig_top.update_layout(
+        plot_bgcolor='#1c1c1c',
+        paper_bgcolor='#000000',
+        font_color='#ffffff',
+        title_font_size=20,
+        showlegend=False,
+        yaxis={'categoryorder': 'total ascending'}
+    )
+    st.plotly_chart(fig_top, use_container_width=True)
+
+    st.markdown("---")
+
+    # === VOLUME PROGRESS ===
+    st.markdown("## 💪 Progres objemu (celkové kg)")
+    
+    daily_volume = df.groupby('date')['volume'].sum().reset_index()
+    daily_volume.columns = ['Datum', 'Objem (kg)']
+    
+    fig_volume = px.area(daily_volume, x='Datum', y='Objem (kg)',
+                         title='Celkový tréninkový objem v čase',
+                         template='plotly_dark')
+    fig_volume.update_traces(line_color='#FFD700', fillcolor='rgba(255,215,0,0.3)')
+    fig_volume.update_layout(
+        plot_bgcolor='#1c1c1c',
+        paper_bgcolor='#000000',
+        font_color='#ffffff',
+        title_font_size=20,
+        hovermode='x unified'
+    )
+    st.plotly_chart(fig_volume, use_container_width=True)
+
+    st.markdown("---")
+
+    # === EXERCISE DISTRIBUTION ===
+    st.markdown("## 📦 Rozdělení cviků podle typu")
+    
+    # Group similar exercises (simple categorization)
+    def categorize_exercise(name):
+        name_lower = name.lower()
+        if any(x in name_lower for x in ['bench', 'tlak', 'press']):
+            return 'Tlaky'
+        elif any(x in name_lower for x in ['squat', 'dřep']):
+            return 'Dřepy'
+        elif any(x in name_lower for x in ['deadlift', 'mrtvý']):
+            return 'Mrtvé tahy'
+        elif any(x in name_lower for x in ['pull', 'tah', 'row']):
+            return 'Tahy'
+        elif any(x in name_lower for x in ['curl', 'bicep']):
+            return 'Biceps'
+        elif any(x in name_lower for x in ['tricep', 'extension']):
+            return 'Triceps'
+        elif any(x in name_lower for x in ['shoulder', 'rameno']):
+            return 'Ramena'
+        else:
+            return 'Ostatní'
+    
+    df['category'] = df['name'].apply(categorize_exercise)
+    category_counts = df['category'].value_counts().reset_index()
+    category_counts.columns = ['Kategorie', 'Počet']
+    
+    fig_pie = px.pie(category_counts, values='Počet', names='Kategorie',
+                     title='Rozdělení cviků podle kategorie',
+                     template='plotly_dark',
+                     color_discrete_sequence=['#FFD700', '#FFED4E', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DC143C', '#8B0000'])
+    fig_pie.update_layout(
+        paper_bgcolor='#000000',
+        font_color='#ffffff',
+        title_font_size=20
+    )
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+    st.markdown("---")
+
+    # === SETS & REPS ANALYSIS ===
+    st.markdown("## 🔢 Analýza sérií a opakování")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        avg_sets = df.groupby('name')['sets'].mean().sort_values(ascending=False).head(10).reset_index()
+        avg_sets.columns = ['Cvik', 'Průměr sérií']
+        avg_sets['Průměr sérií'] = avg_sets['Průměr sérií'].round(1)
+        
+        fig_sets = px.bar(avg_sets, x='Cvik', y='Průměr sérií',
+                         title='Průměrný počet sérií (Top 10)',
+                         template='plotly_dark',
+                         color='Průměr sérií',
+                         color_continuous_scale=['#FFD700', '#FFED4E'])
+        fig_sets.update_layout(
+            plot_bgcolor='#1c1c1c',
+            paper_bgcolor='#000000',
+            font_color='#ffffff',
+            xaxis_tickangle=-45,
+            showlegend=False
+        )
+        st.plotly_chart(fig_sets, use_container_width=True)
+    
+    with col2:
+        avg_reps = df.groupby('name')['reps'].mean().sort_values(ascending=False).head(10).reset_index()
+        avg_reps.columns = ['Cvik', 'Průměr opakování']
+        avg_reps['Průměr opakování'] = avg_reps['Průměr opakování'].round(1)
+        
+        fig_reps = px.bar(avg_reps, x='Cvik', y='Průměr opakování',
+                         title='Průměrný počet opakování (Top 10)',
+                         template='plotly_dark',
+                         color='Průměr opakování',
+                         color_continuous_scale=['#FFD700', '#FFED4E'])
+        fig_reps.update_layout(
+            plot_bgcolor='#1c1c1c',
+            paper_bgcolor='#000000',
+            font_color='#ffffff',
+            xaxis_tickangle=-45,
+            showlegend=False
+        )
+        st.plotly_chart(fig_reps, use_container_width=True)
+
+    st.markdown("---")
+
+    # === PROGRESS TRACKER FOR SPECIFIC EXERCISE ===
+    st.markdown("## 📈 Sledování pokroku jednotlivých cviků")
+    
+    available_exercises = sorted(df['name'].unique())
+    selected_exercise = st.selectbox('Vyberte cvik pro detailní analýzu:', available_exercises)
+    
+    if selected_exercise:
+        ex_data = df[df['name'] == selected_exercise].copy()
+        ex_data = ex_data.sort_values('date')
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Weight progress
+            if ex_data['weight'].sum() > 0:
+                fig_weight = px.line(ex_data, x='date', y='weight',
+                                    title=f'Progres váhy: {selected_exercise}',
+                                    template='plotly_dark',
+                                    markers=True)
+                fig_weight.update_traces(line_color='#FFD700', marker_size=10)
+                fig_weight.update_layout(
+                    plot_bgcolor='#1c1c1c',
+                    paper_bgcolor='#000000',
+                    font_color='#ffffff',
+                    xaxis_title='Datum',
+                    yaxis_title='Váha (kg)'
+                )
+                st.plotly_chart(fig_weight, use_container_width=True)
+            else:
+                st.info('Žádná data o váze pro tento cvik')
+        
+        with col2:
+            # Volume progress
+            if ex_data['volume'].sum() > 0:
+                fig_vol = px.line(ex_data, x='date', y='volume',
+                                 title=f'Progres objemu: {selected_exercise}',
+                                 template='plotly_dark',
+                                 markers=True)
+                fig_vol.update_traces(line_color='#FFED4E', marker_size=10)
+                fig_vol.update_layout(
+                    plot_bgcolor='#1c1c1c',
+                    paper_bgcolor='#000000',
+                    font_color='#ffffff',
+                    xaxis_title='Datum',
+                    yaxis_title='Objem (kg)'
+                )
+                st.plotly_chart(fig_vol, use_container_width=True)
+            else:
+                st.info('Žádná data o objemu pro tento cvik')
+
+    st.markdown("---")
+
+    # === WEEKLY HEATMAP ===
+    st.markdown("## 🗓️ Týdenní aktivita (heatmap)")
+    
+    df_workouts = pd.DataFrame({'date': workout_dates})
+    df_workouts['weekday'] = df_workouts['date'].dt.day_name()
+    df_workouts['week'] = df_workouts['date'].dt.isocalendar().week
+    
+    weekday_counts = df_workouts['weekday'].value_counts().reindex([
+        'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+    ], fill_value=0).reset_index()
+    weekday_counts.columns = ['Den', 'Počet']
+    weekday_map = {
+        'Monday': 'Pondělí', 'Tuesday': 'Úterý', 'Wednesday': 'Středa',
+        'Thursday': 'Čtvrtek', 'Friday': 'Pátek', 'Saturday': 'Sobota', 'Sunday': 'Neděle'
+    }
+    weekday_counts['Den'] = weekday_counts['Den'].map(weekday_map)
+    
+    fig_heatmap = px.bar(weekday_counts, x='Den', y='Počet',
+                        title='Aktivita podle dne v týdnu',
+                        template='plotly_dark',
+                        color='Počet',
+                        color_continuous_scale=['#1c1c1c', '#FFD700'])
+    fig_heatmap.update_layout(
+        plot_bgcolor='#1c1c1c',
+        paper_bgcolor='#000000',
+        font_color='#ffffff',
+        title_font_size=20,
+        showlegend=False
+    )
+    st.plotly_chart(fig_heatmap, use_container_width=True)
+
+    st.markdown("---")
+
+    # === DATA EXPORT ===
+    st.markdown("## 💾 Export dat")
+    with st.expander('📥 Stáhnout surová data (CSV)'):
         try:
             csv_blob = df.to_csv(index=False)
-            st.download_button('Stáhnout CSV', data=csv_blob, file_name=f'stats_exercises_{date.today().isoformat()}.csv', mime='text/csv')
+            st.download_button('⬇️ Stáhnout CSV', 
+                             data=csv_blob, 
+                             file_name=f'fittrack_stats_{date.today().isoformat()}.csv', 
+                             mime='text/csv',
+                             use_container_width=True)
         except Exception:
-            st.write('Export selhal')
+            st.error('Export selhal')
 
 def workouts_page():
     st.markdown('<div class="main-header">💪 Moje tréninky</div>', unsafe_allow_html=True)
@@ -515,7 +1123,7 @@ def workouts_page():
     
     st.markdown("---")
     
-    r = session.get(f"{API_BASE}/workouts")
+    r = session.get(f"{API_BASE}/workouts", timeout=5)
     if not r.ok:
         st.error("Nepodařilo se načíst tréninky")
         return
@@ -560,7 +1168,7 @@ def workout_detail_page():
         return
     
     wid = st.session_state['selected_workout']
-    r = session.get(f"{API_BASE}/workouts/{wid}")
+    r = session.get(f"{API_BASE}/workouts/{wid}", timeout=5)
     
     if not r.ok:
         st.error("Trénink nenalezen")
@@ -573,7 +1181,7 @@ def workout_detail_page():
         st.markdown(f'<div class="main-header">🏋️ Trénink z {workout["date"]}</div>', unsafe_allow_html=True)
     with col2:
         if st.button("🗑️ Smazat trénink", use_container_width=True):
-            r = session.delete(f"{API_BASE}/workouts/{wid}")
+            r = session.delete(f"{API_BASE}/workouts/{wid}", timeout=5)
             if r.ok:
                 st.success("Trénink smazán!")
                 st.session_state['page'] = 'workouts'
@@ -599,7 +1207,7 @@ def workout_detail_page():
                 st.write(f"{ex.get('weight', '-')} kg")
             with col5:
                 if st.button("❌", key=f"del_ex_{ex['id']}"):
-                    r = session.delete(f"{API_BASE}/exercises/{ex['id']}")
+                    r = session.delete(f"{API_BASE}/exercises/{ex['id']}", timeout=5)
                     if r.ok:
                         st.success("Cvik smazán!")
                         st.rerun()
@@ -631,7 +1239,7 @@ def workout_detail_page():
                     'reps': ex_reps,
                     'weight': ex_weight if ex_weight > 0 else None
                 }
-                r = session.post(f"{API_BASE}/exercises/{wid}/add", json=payload)
+                r = session.post(f"{API_BASE}/exercises/{wid}/add", json=payload, timeout=5)
                 if r.ok:
                     st.success("Cvik přidán!")
                     st.rerun()
@@ -682,7 +1290,7 @@ def new_workout_page():
                     'note': note,
                     'exercises': exercises
                 }
-                r = session.post(f"{API_BASE}/workouts", json=payload)
+                r = session.post(f"{API_BASE}/workouts", json=payload, timeout=5)
                 if r.status_code == 201:
                     st.success("Trénink vytvořen!")
                     st.session_state['page'] = 'workouts'
@@ -693,7 +1301,7 @@ def new_workout_page():
 def catalog_page():
     st.markdown('<div class="main-header">📚 Katalog cviků</div>', unsafe_allow_html=True)
     
-    r = session.get(f"{API_BASE}/catalog")
+    r = session.get(f"{API_BASE}/catalog", timeout=5)
     if not r.ok:
         st.error("Nepodařilo se načíst katalog")
         return
@@ -702,7 +1310,7 @@ def catalog_page():
     
     st.write("Základní cviky pro inspiraci:")
     # Load user's workouts so they can choose where to add exercises
-    wr = session.get(f"{API_BASE}/workouts")
+    wr = session.get(f"{API_BASE}/workouts", timeout=5)
     workouts = []
     workout_map = {}
     if wr.ok:
@@ -735,7 +1343,7 @@ def catalog_page():
             # Determine workout id (create if requested)
             if selected_target == create_new_label:
                 payload = {'date': date.today().isoformat(), 'note': f'Přidáno z katalogu: {", ".join(chosen)}', 'exercises': []}
-                cr = session.post(f"{API_BASE}/workouts", json=payload)
+                cr = session.post(f"{API_BASE}/workouts", json=payload, timeout=5)
                 if cr.ok:
                     wid = _safe_json(cr).get('id')
                 else:
@@ -748,7 +1356,7 @@ def catalog_page():
                 errors = []
                 for ex in chosen:
                     ex_payload = {'name': ex, 'sets': int(default_sets), 'reps': int(default_reps)}
-                    ae = session.post(f"{API_BASE}/exercises/{wid}/add", json=ex_payload)
+                    ae = session.post(f"{API_BASE}/exercises/{wid}/add", json=ex_payload, timeout=5)
                     if not ae.ok:
                         try:
                             errors.append(_safe_json(ae).get('error', f'Chyba při přidávání {ex}'))
@@ -773,7 +1381,7 @@ def export_page():
 
     if fmt == 'CSV':
         if st.button("📊 Stáhnout CSV", use_container_width=True):
-            r = session.get(f"{API_BASE}/export/csv")
+            r = session.get(f"{API_BASE}/export/csv", timeout=5)
             if r.ok:
                 csv_data = r.json().get('csv')
                 st.download_button(
@@ -791,7 +1399,7 @@ def export_page():
         if st.button("📄 Stáhnout PDF", use_container_width=True):
             # PDF endpoint is served at /export/pdf
             try:
-                r = session.get(f"{API_BASE.replace('/api','')}/export/pdf")
+                r = session.get(f"{API_BASE.replace('/api','', timeout=5)}/export/pdf")
                 if r.ok:
                     pdf_data = r.content
                     st.download_button(
@@ -810,13 +1418,13 @@ def export_page():
     elif fmt == 'JSON':
         if st.button("🗂️ Stáhnout JSON", use_container_width=True):
             # Build JSON from API
-            r = session.get(f"{API_BASE}/workouts")
+            r = session.get(f"{API_BASE}/workouts", timeout=5)
             if r.ok:
                 summaries = _safe_json(r).get('workouts', [])
                 translated = []
                 for w in summaries:
                     # fetch detailed workout to include exercises
-                    wr = session.get(f"{API_BASE}/workouts/{w['id']}")
+                    wr = session.get(f"{API_BASE}/workouts/{w['id']}", timeout=5)
                     if not wr.ok:
                         continue
                     detail = wr.json().get('workout', {})
@@ -861,7 +1469,7 @@ def admin_page():
     
     st.markdown('<div class="main-header">⚙️ Admin panel</div>', unsafe_allow_html=True)
     
-    r = session.get(f"{API_BASE}/admin/users")
+    r = session.get(f"{API_BASE}/admin/users", timeout=5)
     if not r.ok:
         st.error("Chyba při načítání uživatelů")
         return
@@ -888,7 +1496,7 @@ def admin_page():
 if not st.session_state['logged_in']:
     # Try to check if already logged in
     if not check_login():
-        login_page()
+        landing_page()
         st.stop()
 
 # If logged in but profile not completed, show profile form once
@@ -905,21 +1513,28 @@ with st.sidebar:
     # Profile expander: show profile data and allow editing
     with st.expander("Můj profil", expanded=False):
         u = st.session_state.get('user', {}) or {}
-        # Show a small table of profile fields
-        profile_display = {
-            'Uživatelské jméno': u.get('username', ''),
-            'Email': u.get('email', ''),
-            'Věk': u.get('age') if u.get('age') is not None else '-',
-            'Výška (cm)': u.get('height_cm') if u.get('height_cm') is not None else '-',
-            'Váha (kg)': u.get('weight_kg') if u.get('weight_kg') is not None else '-',
-        }
-        try:
-            import pandas as _pd
-            rows = [[k, '' if v is None else str(v)] for k, v in profile_display.items()]
-            st.table(_pd.DataFrame(rows, columns=['Pole', 'Hodnota']))
-        except Exception:
-            for k, v in profile_display.items():
-                st.write(f"**{k}:** {v}")
+        
+        # Display profile photo if exists
+        if u.get('photo_url'):
+            st.image(u.get('photo_url'), width=150)
+        else:
+            st.write("📷 Žádná profilová fotka")
+        
+        # Show profile info only if not completed (first login) or in edit mode
+        if not u.get('profile_completed') or st.session_state.get('edit_profile'):
+            profile_display = {
+                'Uživatelské jméno': u.get('username', ''),
+                'Věk': u.get('age') if u.get('age') is not None else '-',
+                'Výška (cm)': u.get('height_cm') if u.get('height_cm') is not None else '-',
+                'Váha (kg)': u.get('weight_kg') if u.get('weight_kg') is not None else '-',
+            }
+            try:
+                import pandas as _pd
+                rows = [[k, '' if v is None else str(v)] for k, v in profile_display.items()]
+                st.table(_pd.DataFrame(rows, columns=['Pole', 'Hodnota']))
+            except Exception:
+                for k, v in profile_display.items():
+                    st.write(f"**{k}:** {v}")
 
         if st.button("Upravit profil", key='sidebar_edit_profile'):
             st.session_state['edit_profile'] = True
@@ -950,7 +1565,7 @@ with st.sidebar:
     st.markdown("---")
     
     if st.button("🚪 Odhlásit se", use_container_width=True):
-        r = session.post(f"{API_BASE}/logout")
+        r = session.post(f"{API_BASE}/logout", timeout=5)
         st.session_state['logged_in'] = False
         st.session_state['user'] = None
         st.session_state['page'] = 'dashboard'
@@ -965,6 +1580,33 @@ page = st.session_state.get('page', 'dashboard')
 def profile_editor_main():
     st.markdown("<div class='main-header'>✏️ Upravit profil</div>", unsafe_allow_html=True)
     u = st.session_state.get('user', {}) or {}
+    
+    # Photo upload section (outside form)
+    st.subheader("📷 Profilová fotka")
+    uploaded_file = st.file_uploader("Nahrát novou fotku", type=['png', 'jpg', 'jpeg'], key='photo_upload')
+    if uploaded_file is not None:
+        import base64
+        from io import BytesIO
+        from PIL import Image
+        
+        # Display preview
+        image = Image.open(uploaded_file)
+        st.image(image, width=200, caption="Náhled")
+        
+        # Convert to base64 for storage
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        
+        if st.button("💾 Uložit fotku"):
+            # Store in session state (in real app, upload to server)
+            st.session_state['user']['photo_url'] = f"data:image/png;base64,{img_str}"
+            st.success("✅ Fotka uložena!")
+            st.rerun()
+    
+    st.markdown("---")
+    st.subheader("📝 Údaje profilu")
+    
     with st.form('main_profile_editor'):
         age_val = st.number_input('Věk', min_value=1, max_value=120, value=int(u.get('age') or 25))
         height_val = st.number_input('Výška (cm)', min_value=50.0, max_value=250.0, value=float(u.get('height_cm') or 175.0))
@@ -974,7 +1616,7 @@ def profile_editor_main():
         if submitted:
             payload = {'age': int(age_val), 'height_cm': float(height_val), 'weight_kg': float(weight_val)}
             try:
-                r = session.post(f"{API_BASE}/profile", json=payload)
+                r = session.post(f"{API_BASE}/profile", json=payload, timeout=5)
                 if r.ok:
                     st.success('Profil uložen.')
                     st.session_state['user'].update({'age': payload['age'], 'height_cm': payload['height_cm'], 'weight_kg': payload['weight_kg'], 'profile_completed': True})
@@ -1000,6 +1642,8 @@ if st.session_state.get('edit_profile'):
 
 if page == 'dashboard':
     dashboard_page()
+elif page == 'stats':
+    stats_page()
 elif page == 'workouts':
     workouts_page()
 elif page == 'workout_detail':
