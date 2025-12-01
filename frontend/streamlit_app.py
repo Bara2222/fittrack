@@ -6,12 +6,15 @@ import webbrowser
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import defaultdict, Counter
+import os
 
-# Use secrets if available, otherwise default to localhost
-try:
-    API_BASE = st.secrets.get('api_base', 'http://localhost:5000/api')
-except:
-    API_BASE = 'http://localhost:5000/api'
+# Use environment variable first, then secrets, then default to localhost
+API_BASE = os.environ.get('API_BASE')
+if not API_BASE:
+    try:
+        API_BASE = st.secrets.get('api_base', 'http://localhost:5000/api')
+    except:
+        API_BASE = 'http://localhost:5000/api'
 
 # Initialize session
 if 'session' not in st.session_state:
@@ -380,6 +383,12 @@ html, body, [class*='css'] { font-family: 'Poppins', sans-serif; color:#1a1a1a; 
     background: rgba(255,215,0,0.05);
 }
 
+/* Footer at bottom of page */
+.main .block-container {
+    min-height: calc(100vh - 200px);
+    padding-bottom: 2rem;
+}
+
 </style>
 """
 
@@ -410,12 +419,45 @@ def _password_strength(pw: str):
 
 
 def render_app_header():
-    # Version from secrets if available
-    try:
-        ver = st.secrets.get('app_version', 'v2.0')
-    except Exception:
-        ver = 'v2.0'
-    st.markdown(f"<div class='main-header'>💪 FitTrack <span class='main-sub'>{ver} — Tréninkový deník</span></div>", unsafe_allow_html=True)
+    """Render top navigation bar with login/user info."""
+    # Check if user is logged in
+    logged_in = st.session_state.get('logged_in', False)
+    user_info = st.session_state.get('user', {})
+    
+    if logged_in:
+        # Show header for logged in users
+        try:
+            ver = st.secrets.get('app_version', 'v2.0')
+        except Exception:
+            ver = 'v2.0'
+        st.markdown(f"<div class='main-header'>💪 FitTrack <span class='main-sub'>{ver} — Tréninkový deník</span></div>", unsafe_allow_html=True)
+    else:
+        # Show header with login button for guests - using columns to align properly
+        col1, col2, col3 = st.columns([3, 1, 1])
+        
+        with col1:
+            st.markdown("""
+            <div style='padding: 0.5rem 0;'>
+                <h2 style='color: #ffd700; margin: 0; font-size: 1.8rem; font-weight: 800;'>💪 FitTrack</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("<div style='padding-top: 0.3rem;'>", unsafe_allow_html=True)
+            if st.button("🔐 Přihlásit se", key="header_login_btn", use_container_width=True, type="primary"):
+                st.session_state['show_login_form'] = True
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("<div style='padding-top: 0.3rem;'>", unsafe_allow_html=True)
+            if st.button("📝 Registrace", key="header_register_btn", use_container_width=True):
+                st.session_state['show_login_form'] = True
+                st.session_state['default_tab'] = 'Registrace'
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("<hr style='border: none; border-top: 2px solid #ffd700; margin: 1rem 0;'>", unsafe_allow_html=True)
 
 
 
@@ -553,69 +595,213 @@ def profile_form():
     st.stop()
 
 
+# Footer component - displayed on all pages
+def render_footer():
+    """Render footer at the bottom of every page."""
+    from datetime import datetime
+    current_year = datetime.now().year
+    
+    # Use native Streamlit components instead of HTML
+    st.markdown("---")
+    st.markdown("### 💪 FitTrack")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown("**💪 FitTrack**")
+        st.markdown("První český tréninkový deník, který zjednodušuje cestu k vašim fitness cílům.")
+        st.markdown("📧 info@fittrack.cz")
+        st.markdown("🌐 Webová aplikace")
+    
+    with col2:
+        st.markdown("**Rychlé odkazy**")
+        st.markdown("📊 Dashboard")
+        st.markdown("💪 Moje tréninky")
+        st.markdown("📚 Katalog cviků")
+        st.markdown("📈 Statistiky")
+        st.markdown("📥 Export dat")
+    
+    with col3:
+        st.markdown("**Funkce**")
+        st.markdown("✓ Sledování pokroku")
+        st.markdown("✓ Plánování tréninků")
+        st.markdown("✓ Grafické statistiky")
+        st.markdown("✓ Export PDF/JSON")
+        st.markdown("✓ Katalog cvičení")
+    
+    with col4:
+        st.markdown("**Podpora**")
+        st.markdown("📖 Nápověda")
+        st.markdown("❓ Časté dotazy")
+        st.markdown("🔒 Ochrana údajů")
+        st.markdown("📋 Obchodní podmínky")
+    
+    st.markdown("---")
+    st.markdown(f"© {current_year} FitTrack. Všechna práva vyhrazena. | Vytvořeno s ❤️ pro fitness nadšence")
+
+
 def landing_page():
     """Landing page with intro and login button."""
     # Check if we should show login form instead
     if st.session_state.get('show_login_form', False):
         login_page()
+        st.stop()
         return
+    
+    # Render header with login button
+    render_app_header()
 
-    # Hero section
+    # Hero section with larger impact
     st.markdown("""
-    <div style="text-align: center; padding: 4rem 0;">
-        <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(90deg, #5cc8ff, #ff9f6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+    <div style="text-align: center; padding: 5rem 0 3rem 0; background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);">
+        <div style="font-size: 1rem; color: #ffd700; font-weight: 600; letter-spacing: 2px; margin-bottom: 1rem;">
+            VÁŠE FITNESS NA PRVNÍM MÍSTĚ
+        </div>
+        <h1 style="font-size: 4.5rem; font-weight: 900; margin-bottom: 1.2rem; color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3); line-height: 1.1;">
             FitTrack
         </h1>
-        <p style="font-size: 1.25rem; color: #9aa4b2; max-width: 600px; margin: 0 auto 2rem;">
-            Váš osobní tréninkový deník. Sledujte své pokroky, plánujte cvičení a dosahujte svých cílů efektivněji.
+        <p style="font-size: 1.1rem; color: #ffffff; max-width: 700px; margin: 0 auto 2.5rem; font-weight: 400; line-height: 1.7;">
+            Profesionální tréninkový deník pro maximalizaci vašich výsledků.<br>
+            Sledujte pokrok, plánujte tréninky a dosahujte cílů efektivněji než kdy předtím.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Features grid
+    # Feature cards with more professional look
+    st.markdown("<div style='padding: 1rem 0; background: #000000;'>", unsafe_allow_html=True)
+    
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("""
-        <div class="card" style="text-align: center; height: 100%;">
-            <div style="font-size: 2rem; margin-bottom: 1rem;">📊</div>
-            <h3 style="color: #e6eef7;">Statistiky</h3>
-            <p style="color: #9aa4b2;">Přehledné grafy a analýzy vašich výkonů.</p>
+        <div class="card" style="text-align: center; padding: 2.5rem; min-height: 280px; 
+             background: #1c1c1c; border: 2px solid #ffd700; border-radius: 12px; 
+             transition: transform 0.3s; cursor: pointer;">
+            <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">📊</div>
+            <h3 style="color: #ffd700; margin-bottom: 1rem; font-size: 1.5rem; font-weight: 700;">Detailní statistiky</h3>
+            <p style="color: #ffffff; font-size: 1rem; line-height: 1.6;">
+                Komplexní přehled vašeho pokroku s grafickou vizualizací výkonů a analýzou trendů.
+            </p>
         </div>
         """, unsafe_allow_html=True)
+    
     with col2:
         st.markdown("""
-        <div class="card" style="text-align: center; height: 100%;">
-            <div style="font-size: 2rem; margin-bottom: 1rem;">💪</div>
-            <h3 style="color: #e6eef7;">Tréninky</h3>
-            <p style="color: #9aa4b2;">Databáze cviků a možnost tvorby vlastních plánů.</p>
+        <div class="card" style="text-align: center; padding: 2.5rem; min-height: 280px; 
+             background: #1c1c1c; border: 2px solid #ffd700; border-radius: 12px; 
+             transition: transform 0.3s; cursor: pointer;">
+            <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">💪</div>
+            <h3 style="color: #ffd700; margin-bottom: 1rem; font-size: 1.5rem; font-weight: 700;">Plánování tréninků</h3>
+            <p style="color: #ffffff; font-size: 1rem; line-height: 1.6;">
+                Rozsáhlá databáze cvičení s možností vytváření vlastních tréninkových plánů na míru.
+            </p>
         </div>
         """, unsafe_allow_html=True)
+    
     with col3:
         st.markdown("""
-        <div class="card" style="text-align: center; height: 100%;">
-            <div style="font-size: 2rem; margin-bottom: 1rem;">📱</div>
-            <h3 style="color: #e6eef7;">Mobilní</h3>
-            <p style="color: #9aa4b2;">Přístupné odkudkoliv, optimalizované pro telefon.</p>
+        <div class="card" style="text-align: center; padding: 2.5rem; min-height: 280px; 
+             background: #1c1c1c; border: 2px solid #ffd700; border-radius: 12px; 
+             transition: transform 0.3s; cursor: pointer;">
+            <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">🌐</div>
+            <h3 style="color: #ffd700; margin-bottom: 1rem; font-size: 1.5rem; font-weight: 700;">Webová aplikace</h3>
+            <p style="color: #ffffff; font-size: 1rem; line-height: 1.6;">
+                Přístup kdykoliv a odkudkoliv prostřednictvím moderního webového rozhraní.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Why FitTrack section
+    st.markdown("""
+    <div style='background: #1a1a1a; padding: 4rem 0; margin-top: 2rem;'>
+        <h2 style='text-align: center; color: #ffd700; font-size: 2.5rem; font-weight: 800; margin-bottom: 3rem;'>
+            PROČ FITTRACK?
+        </h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        <div style='padding: 2rem; background: #1c1c1c; border-left: 4px solid #ffd700; margin-bottom: 1.5rem;'>
+            <h4 style='color: #ffd700; margin-bottom: 1rem; font-size: 1.3rem;'>✓ Jednoduché a intuitivní</h4>
+            <p style='color: #ffffff; line-height: 1.6;'>
+                Začněte cvičit během několika sekund. Žádné složité nastavení ani komplikace.
+            </p>
+        </div>
+        <div style='padding: 2rem; background: #1c1c1c; border-left: 4px solid #ffd700; margin-bottom: 1.5rem;'>
+            <h4 style='color: #ffd700; margin-bottom: 1rem; font-size: 1.3rem;'>✓ Profesionální nástroje</h4>
+            <p style='color: #ffffff; line-height: 1.6;'>
+                Vše co potřebujete pro efektivní sledování pokroku na jednom místě.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div style='padding: 2rem; background: #1c1c1c; border-left: 4px solid #ffd700; margin-bottom: 1.5rem;'>
+            <h4 style='color: #ffd700; margin-bottom: 1rem; font-size: 1.3rem;'>✓ Rychlý start</h4>
+            <p style='color: #ffffff; line-height: 1.6;'>
+                Předpřipravené tréninkové plány pro začátečníky i pokročilé sportovce.
+            </p>
+        </div>
+        <div style='padding: 2rem; background: #1c1c1c; border-left: 4px solid #ffd700; margin-bottom: 1.5rem;'>
+            <h4 style='color: #ffd700; margin-bottom: 1rem; font-size: 1.3rem;'>✓ Vaše data v bezpečí</h4>
+            <p style='color: #ffffff; line-height: 1.6;'>
+                Maximální ochrana vašich osobních údajů a tréninkové historie.
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
 
-    # Call to action
+    # Call to action with better design
+    st.markdown("""
+    <div style='text-align: center; padding: 4rem 2rem; background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);'>
+        <h2 style='color: #ffffff; font-size: 2.2rem; font-weight: 700; margin-bottom: 1rem;'>
+            Připraveni změnit své fitness?
+        </h2>
+        <p style='color: #b8b8b8; font-size: 1.2rem; margin-bottom: 2.5rem;'>
+            Začněte sledovat své tréninky ještě dnes
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
-        if st.button("🚀 Začít cvičit (Přihlásit se)", use_container_width=True):
+        if st.button("🚀 ZAČÍT CVIČIT", use_container_width=True, type="primary"):
             st.session_state['show_login_form'] = True
             st.rerun()
+    
+    # Add footer to landing page
+    render_footer()
+    st.stop()
 
 
 def login_page():
-    st.markdown('<div class="main-header">💪 FitTrack</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">💪 FitTrack - Přihlášení</div>', unsafe_allow_html=True)
     st.markdown("---")
     
-    tab1, tab2 = st.tabs(["Přihlášení", "Registrace"])
+    # Check if we should default to registration tab
+    default_tab = st.session_state.get('default_tab', 'Přihlášení')
+    if default_tab == 'Registrace':
+        tab_order = ["Registrace", "Přihlášení"]
+        st.session_state.pop('default_tab', None)  # Clear after using
+    else:
+        tab_order = ["Přihlášení", "Registrace"]
     
-    with tab1:
+    tab1, tab2 = st.tabs(tab_order)
+    
+    # Determine which content goes where based on tab order
+    if tab_order[0] == "Přihlášení":
+        login_tab = tab1
+        register_tab = tab2
+    else:
+        login_tab = tab2
+        register_tab = tab1
+    
+    with login_tab:
         st.subheader("Přihlásit se")
         with st.form("login_form"):
             username = st.text_input("Uživatelské jméno")
@@ -637,6 +823,7 @@ def login_page():
                             data = _safe_json(r)
                             st.session_state['logged_in'] = True
                             st.session_state['user'] = {'username': username, 'is_admin': data.get('is_admin', False)}
+                            st.session_state['page'] = 'dashboard'
                             st.success("Přihlášení úspěšné!")
                             st.rerun()
                         else:
@@ -656,8 +843,16 @@ def login_page():
                     st.error('Chyba při získávání adresy pro Google přihlášení')
             else:
                 st.error("Chyba při inicializaci Google přihlášení")
+        
+        # Tlačítko pro návrat na úvod
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col3:
+            if st.button("← Zpět na úvod", use_container_width=True):
+                st.session_state['show_login_form'] = False
+                st.session_state['page'] = 'landing'
+                st.rerun()
     
-    with tab2:
+    with register_tab:
         st.subheader("Registrace")
         with st.form("register_form"):
             new_username = st.text_input("Uživatelské jméno", key="reg_user")
@@ -702,6 +897,14 @@ def login_page():
                                 st.balloons()
                             else:
                                 _display_api_error(r)
+        
+        # Tlačítko pro návrat na úvod u registrace
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col3:
+            if st.button("← Zpět na úvod", key="register_back_btn", use_container_width=True):
+                st.session_state['show_login_form'] = False
+                st.session_state['page'] = 'landing'
+                st.rerun()
 
 def dashboard_page():
     st.markdown('<div class="main-header">📊 Dashboard</div>', unsafe_allow_html=True)
