@@ -5,7 +5,7 @@ SQLAlchemy ORM models for FitTrack application
 """
 from datetime import datetime
 from flask_login import UserMixin
-from backend import db
+from app import db
 
 class User(UserMixin, db.Model):
     """User model for authentication and profile"""

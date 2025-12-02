@@ -11,8 +11,8 @@ from flask import Blueprint, jsonify, request, url_for, redirect
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from backend.app import db, logger
-from backend.database_models import User, Workout, WorkoutExercise
+from app import db, logger
+from database_models import User, Workout, WorkoutExercise
 from flask import g
 
 
@@ -42,17 +42,17 @@ def register():
         password = data.get('password', '')
         
         if not username or not password:
-            return _json_err('Username and password are required', 400)
+            return _json_err('Uživatelské jméno a heslo jsou povinné', 400)
         
         if len(username) < 3:
-            return _json_err('Username must be at least 3 characters', 400)
+            return _json_err('Uživatelské jméno musí mít alespoň 3 znaky', 400)
         
         if len(password) < 8:
-            return _json_err('Password must be at least 8 characters', 400)
+            return _json_err('Heslo musí mít alespoň 8 znaků', 400)
         
         # Check if user exists
         if User.query.filter_by(username=username).first():
-            return _json_err('Username already exists', 400)
+            return _json_err('Uživatelské jméno již existuje', 400)
         
         # Create user
         new_user = User(
@@ -68,7 +68,7 @@ def register():
     except Exception as e:
         logger.error(f'Registration error: {str(e)}')
         db.session.rollback()
-        return jsonify({'ok': False, 'error': 'Registration failed'}), 500
+        return jsonify({'ok': False, 'error': 'Došlo k chybě při registraci. Zkuste to prosím znovu.'}), 500
 
 
 @api_bp.route('/login', methods=['POST'])
@@ -81,7 +81,7 @@ def login():
         password = data.get('password', '')
         
         if not username or not password:
-            return jsonify({'ok': False, 'error': 'Username and password are required'}), 400
+            return jsonify({'ok': False, 'error': 'Uživatelské jméno a heslo jsou povinné'}), 400
         
         # Check for admin
         admin_password = os.getenv('ADMIN_PASSWORD', 'Admin&4')
@@ -102,7 +102,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if not user or not check_password_hash(user.password, password):
             logger.warning(f'Failed login attempt for: {username}')
-            return jsonify({'ok': False, 'error': 'Invalid credentials'}), 401
+            return jsonify({'ok': False, 'error': 'Nesprávné uživatelské jméno nebo heslo'}), 401
         
         login_user(user)
         logger.info(f'User logged in: {username}')
@@ -110,7 +110,7 @@ def login():
     
     except Exception as e:
         logger.error(f'Login error: {str(e)}')
-        return jsonify({'ok': False, 'error': 'Login failed'}), 500
+        return jsonify({'ok': False, 'error': 'Došlo k chybě při přihlašování. Zkuste to prosím znovu.'}), 500
 
 
 @api_bp.route('/logout', methods=['POST'])

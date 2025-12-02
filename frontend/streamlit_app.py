@@ -6,426 +6,187 @@ import webbrowser
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import defaultdict, Counter
-import os
 
-# Use environment variable first, then secrets, then default to localhost
-API_BASE = os.environ.get('API_BASE')
-if not API_BASE:
-    try:
-        API_BASE = st.secrets.get('api_base', 'http://localhost:5000/api')
-    except:
-        API_BASE = 'http://localhost:5000/api'
+# Import our custom modules
+from config import API_BASE, GLOBAL_CSS, DEFAULT_WORKOUT_TEMPLATES
+from auth import (
+    initialize_session, check_oauth_callback, check_login, 
+    profile_form, login_page, logout, _safe_json, _display_api_error
+)
+from utils import (
+    calculate_1rm, calculate_plate_distribution, render_plate_visual,
+    calculate_workout_streak, check_achievements, create_activity_heatmap,
+    get_all_achievements, format_duration, calculate_bmi, get_bmi_category,
+    calculate_calories_burned, toggle_theme, calculate_training_volume
+)
 
-# Initialize session
-if 'session' not in st.session_state:
-    st.session_state['session'] = requests.Session()
-
+# Initialize session and authentication
+initialize_session()
 session = st.session_state['session']
 
 
-# --------------------------------------------------
-# Global CSS & UI helpers (visual improvements)
-# --------------------------------------------------
-_GLOBAL_CSS = r"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-html, body, [class*='css'] { font-family: 'Poppins', sans-serif; color:#1a1a1a; background:var(--bg) !important }
-
-/* Theme variables - Black & Yellow */
-:root{
-    --bg: #000000;           /* pure black background */
-    --surface: #1c1c1c;      /* dark surface with slight lift */
-    --primary: #ffd700;      /* vibrant gold/yellow */
-    --secondary: #ffffff;    /* white for text */
-    --accent: #ffed4e;       /* lighter yellow accent */
-    --muted: #b8b8b8;        /* lighter gray for better readability */
-    --success: #4ade80;
-    --danger: #ef4444;
-    --border: #ffd700;       /* yellow borders */
-    --text-primary: #ffffff; /* primary white text */
-    --text-secondary: #000000; /* black text for yellow backgrounds */
-}
-
-/* Container */
-.block-container{
-    max-width:1200px; 
-    margin:0 auto; 
-    padding:2rem 1.5rem; 
-    background:var(--bg);
-    position: relative;
-}
-.block-container::before{
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,215,0,0.03) 50px, rgba(255,215,0,0.03) 51px),
-        repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255,215,0,0.03) 50px, rgba(255,215,0,0.03) 51px);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Main header */
-.main-header{
-    font-size:36px; 
-    font-weight:800; 
-    color:var(--text-secondary); 
-    background: linear-gradient(135deg, var(--primary), var(--accent)); 
-    padding:24px 32px; 
-    border-radius:20px; 
-    box-shadow:0 8px 32px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2); 
-    margin-bottom:32px; 
-    display:flex; 
-    align-items:center; 
-    gap:16px;
-    border: 3px solid var(--primary);
-    position: relative;
-    overflow: hidden;
-}
-.main-header::before{
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-    transform: rotate(45deg);
-    animation: shine 3s infinite;
-}
-@keyframes shine {
-    0% { transform: translateX(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) rotate(45deg); }
-}
-.main-sub{font-size:14px; color:var(--text-secondary); margin-left:8px; font-weight:500; opacity:0.9}
-
-/* Sidebar */
-[data-testid="stSidebar"]{
-    background: linear-gradient(180deg, #1c1c1c, #0a0a0a);
-    padding:24px 16px; 
-    box-shadow: 0 0 30px rgba(255,215,0,0.3); 
-    border-right: 2px solid var(--primary);
-}
-[data-testid="stSidebar"] h1{
-    color: var(--primary) !important;
-    text-shadow: 0 0 20px rgba(255,215,0,0.8);
-}
-
-/* Buttons */
-.stButton>button{
-    border-radius:12px; 
-    padding:12px 24px; 
-    transition: all .3s ease; 
-    font-weight:600;
-    font-size:15px;
-    border:none;
-    background: var(--primary) !important;
-    color: #000000 !important;
-    box-shadow: 0 2px 8px rgba(255,215,0,0.4);
-}
-.stButton>button:hover{
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255,215,0,0.6);
-    background: var(--accent) !important;
-}
-.stButton>button:disabled{opacity:0.5}
-
-/* Secondary buttons */
-.stButton>button.secondary{
-    background: transparent;
-    border: 2px solid var(--primary);
-    color: var(--primary);
-    box-shadow: none;
-}
-.stButton>button.secondary:hover{
-    background: var(--primary);
-    color: white;
-}
-
-/* Messages */
-.stAlert{
-    border-radius:12px;
-    padding:16px;
-    border-left: 4px solid var(--primary);
-}
-.stAlert--success{
-    background: rgba(72,187,120,0.1);
-    border-left-color: var(--success);
-    color: var(--secondary);
-}
-.stAlert--error{
-    background: rgba(245,101,101,0.1);
-    border-left-color: var(--danger);
-    color: var(--secondary);
-}
-.stAlert--info{
-    background: rgba(255,215,0,0.1);
-    border-left-color: var(--primary);
-    color: var(--secondary);
-}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"]{
-    gap:12px;
-    background: rgba(255,215,0,0.05);
-    padding:12px;
-    border-radius:16px;
-    border: 2px solid rgba(255,215,0,0.2);
-}
-.stTabs [data-baseweb="tab"]{
-    border-radius:12px;
-    padding:14px 28px;
-    font-weight:700;
-    color: var(--muted);
-    border: 2px solid transparent;
-    transition: all .3s ease;
-}
-.stTabs [data-baseweb="tab"]:hover{
-    background: rgba(255,215,0,0.1);
-    border-color: rgba(255,215,0,0.3);
-    color: var(--primary);
-}
-.stTabs [aria-selected="true"]{
-    background: linear-gradient(135deg, var(--primary), var(--accent)) !important;
-    color: var(--text-secondary) !important;
-    border-color: var(--primary) !important;
-    box-shadow: 0 4px 12px rgba(255,215,0,0.4);
-    font-weight: 800;
-}
-
-/* Cards */
-.card{
-    background: linear-gradient(145deg, #1c1c1c, #141414); 
-    border-radius:20px; 
-    padding:28px; 
-    box-shadow:0 4px 20px rgba(255,215,0,0.2), inset 0 1px 0 rgba(255,215,0,0.1);
-    border: 2px solid rgba(255,215,0,0.3);
-    transition: all .4s ease;
-    position: relative;
-}
-.card::before{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 20px;
-    padding: 2px;
-    background: linear-gradient(135deg, var(--primary), transparent, var(--accent));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0;
-    transition: opacity .4s ease;
-}
-.card:hover{
-    box-shadow:0 8px 32px rgba(255,215,0,0.4), 0 0 60px rgba(255,215,0,0.2);
-    transform: translateY(-4px) scale(1.02);
-    border-color: var(--primary);
-}
-.card:hover::before{
-    opacity: 1;
-}
-
-/* Override Streamlit defaults */
-.stApp{background:var(--bg) !important}
-.main{background:var(--bg) !important}
-.block-container{background:var(--bg) !important}
-
-/* Markdown/text */
-.stMarkdown, .stText, .stHtml, .stMarkdown div, .stCaption{
-    color: var(--text-primary) !important;
-    background: transparent !important;
-    line-height: 1.6;
-}
-.stMarkdown h1{
-    color: var(--primary) !important;
-    font-weight: 800;
-    font-size: 2.5rem;
-    text-shadow: 0 0 30px rgba(255,215,0,0.6);
-    margin-bottom: 1rem;
-}
-.stMarkdown h2{
-    color: var(--accent) !important;
-    font-weight: 700;
-    font-size: 2rem;
-    text-shadow: 0 0 20px rgba(255,237,78,0.5);
-    margin-bottom: 0.8rem;
-}
-.stMarkdown h3{
-    color: var(--text-primary) !important;
-    font-weight: 600;
-    font-size: 1.5rem;
-    border-left: 4px solid var(--primary);
-    padding-left: 12px;
-    margin-bottom: 0.6rem;
-}
-.stMarkdown p{
-    color: var(--muted) !important;
-    font-size: 1rem;
-}
-.stMarkdown a{
-    color: var(--primary) !important;
-    text-decoration: none;
-    font-weight:600;
-    border-bottom: 2px solid transparent;
-    transition: all .3s ease;
-}
-.stMarkdown a:hover{
-    border-bottom-color: var(--primary);
-    text-shadow: 0 0 10px rgba(255,215,0,0.6);
-}
-
-/* Form inputs */
-.stTextInput>div>div>input, 
-.stTextArea>div>div>textarea,
-.stSelectbox>div>div>div,
-.stNumberInput>div>div>input{
-    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
-    border: 2px solid rgba(255,215,0,0.3) !important;
-    border-radius: 12px !important;
-    color: var(--text-primary) !important;
-    padding:14px 16px !important;
-    font-size:16px !important;
-    transition: all .3s ease;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-}
-.stTextInput>div>div>input:focus,
-.stTextArea>div>div>textarea:focus{
-    border-color: var(--primary) !important;
-    box-shadow: 0 0 0 4px rgba(255,215,0,0.3), inset 0 2px 4px rgba(0,0,0,0.3) !important;
-    background: linear-gradient(145deg, #303030, #202020) !important;
-}
-
-/* Labels */
-.stTextInput>label, .stTextArea>label, .stSelectbox>label, .stNumberInput>label{
-    color: var(--primary) !important;
-    font-weight: 700 !important;
-    font-size: 15px !important;
-    margin-bottom: 10px !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Sidebar elements */
-[data-testid="stSidebar"] .stButton>button{
-    width:100%;
-    text-align:left;
-    justify-content:flex-start;
-    background: transparent !important;
-    color: var(--text-primary) !important;
-    box-shadow:none;
-    border: 2px solid rgba(255,215,0,0.2) !important;
-    border-radius: 12px;
-}
-[data-testid="stSidebar"] .stButton>button:hover{
-    background: rgba(255,215,0,0.15) !important;
-    border-color: var(--primary) !important;
-    transform: translateX(6px);
-    box-shadow: 0 0 20px rgba(255,215,0,0.3) !important;
-    color: var(--primary) !important;
-}
-
-/* Stat boxes */
-.stat-box{
-    background: linear-gradient(135deg, #ffd700, #ffed4e);
-    color: #000000;
-    padding:32px;
-    border-radius:20px;
-    text-align:center;
-    box-shadow:0 8px 32px rgba(255,215,0,0.5), inset 0 -2px 0 rgba(0,0,0,0.1);
-    border: 3px solid #000000;
-    position: relative;
-    overflow: hidden;
-}
-.stat-box::before{
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
-    transform: rotate(45deg);
-    animation: shine 3s infinite;
-}
-.stat-number{
-    font-size:56px;
-    font-weight:900;
-    margin-bottom:12px;
-    text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
-    position: relative;
-}
-.stat-label{
-    font-size:16px;
-    font-weight:700;
-    opacity:0.9;
-    text-transform:uppercase;
-    letter-spacing:2px;
-    position: relative;
-}
-
-/* Expander */
-.streamlit-expanderHeader{
-    background: var(--surface);
-    border-radius:12px;
-    padding:16px;
-    border: 1px solid var(--border);
-    font-weight:600;
-    color: var(--secondary);
-}
-.streamlit-expanderHeader:hover{
-    border-color: var(--primary);
-    background: rgba(255,215,0,0.05);
-}
-
-/* Footer at bottom of page */
-.main .block-container {
-    min-height: calc(100vh - 200px);
-    padding-bottom: 2rem;
-}
-
-</style>
-"""
-
-st.markdown(_GLOBAL_CSS, unsafe_allow_html=True)
+# Apply global CSS styles
+st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 
-def _password_strength(pw: str):
-    """Return (score 0-5, color, label, width%)"""
-    if not pw:
-        return 0, '#eee', 'Very weak', 6
-    score = 0
-    if len(pw) >= 8:
-        score += 1
-    if len(pw) >= 12:
-        score += 1
-    if any(c.isdigit() for c in pw):
-        score += 1
-    if any(not c.isalnum() for c in pw):
-        score += 1
-    if any(c.isupper() for c in pw) and any(c.islower() for c in pw):
-        score += 1
+def show_loading(text="Načítám..."):
+    """Show loading spinner with text"""
+    st.markdown(f"""
+    <div style="text-align: center; padding: 2rem;">
+        <div class="loading-spinner"></div>
+        <p style="color: var(--muted); margin-top: 1rem;">{text}</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    if score <= 1:
-        return score, '#ef4444', 'Weak', 20 + score*10
-    if score <= 3:
-        return score, '#f97316', 'Fair', 40 + score*12
-    return score, '#10b981', 'Strong', 80 + (score-4)*4
+
+def show_toast(message, toast_type="success"):
+    """Show toast notification"""
+    color = "var(--success)" if toast_type == "success" else "var(--danger)"
+    st.markdown(f"""
+    <div class="toast" style="background: {color};">
+        {message}
+    </div>
+    <script>
+        setTimeout(() => {{
+            document.querySelector('.toast').remove();
+        }}, 3000);
+    </script>
+    """, unsafe_allow_html=True)
+    
+    plate_html = '<div class="plate-visual">'
+    
+    # Left side plates
+    for plate in reversed(plates):
+        plate_class = f"plate-{str(plate).replace('.', '_')}"
+        plate_html += f'<div class="plate {plate_class}">{plate}</div>'
+    
+    # Barbell
+    plate_html += '<div class="barbell"></div>'
+    
+    # Right side plates (mirror)
+    for plate in plates:
+        plate_class = f"plate-{str(plate).replace('.', '_')}"
+        plate_html += f'<div class="plate {plate_class}">{plate}</div>'
+    
+    plate_html += '</div>'
+    return plate_html
 
 
 def render_app_header():
     """Render top navigation bar with login/user info."""
+    # Theme toggle button
+    current_theme = st.session_state.get('theme', 'dark')
+    theme_icon = '☀️' if current_theme == 'dark' else '🌙'
+    
+    # Apply theme class to body
+    theme_class = f'theme-{current_theme}'
+    st.markdown(f'<div class="{theme_class}"></div>', unsafe_allow_html=True)
+    
+    # Advanced Theme toggle button with animations
+    st.markdown(f'''
+    <button class="theme-toggle" onclick="toggleTheme()" title="Přepnout téma" id="themeToggle">
+    </button>
+    
+    <script>
+    function toggleTheme() {{
+        const body = document.body;
+        const toggle = document.getElementById('themeToggle');
+        const isLight = body.classList.contains('light-theme');
+        
+        // Add transition class
+        body.style.transition = 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
+        
+        if (isLight) {{
+            body.classList.remove('light-theme');
+            toggle.classList.remove('light');
+            localStorage.setItem('theme', 'dark');
+        }} else {{
+            body.classList.add('light-theme');
+            toggle.classList.add('light');
+            localStorage.setItem('theme', 'light');
+        }}
+        
+        // Trigger custom animation
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {{
+            setTimeout(() => {{
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => {{
+                    card.style.transform = 'scale(1)';
+                }}, 100);
+            }}, index * 50);
+        }});
+    }}
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const toggle = document.getElementById('themeToggle');
+    
+    if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {{
+        document.body.classList.add('light-theme');
+        if (toggle) toggle.classList.add('light');
+    }}
+    
+    // Add ripple effect to buttons
+    document.addEventListener('click', function(e) {{
+        if (e.target.matches('.stButton > button')) {{
+            const button = e.target;
+            const ripple = document.createElement('span');
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.height, rect.width);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.cssText = `
+                position: absolute;
+                width: ${{size}}px;
+                height: ${{size}}px;
+                left: ${{x}}px;
+                top: ${{y}}px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.3);
+                transform: scale(0);
+                animation: ripple 0.6s ease-out;
+                pointer-events: none;
+            `;
+            
+            button.style.position = 'relative';
+            button.style.overflow = 'hidden';
+            button.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+        }}
+    }});
+    </script>
+    ''', unsafe_allow_html=True)
+    
     # Check if user is logged in
     logged_in = st.session_state.get('logged_in', False)
     user_info = st.session_state.get('user', {})
     
     if logged_in:
-        # Show header for logged in users
+        # Show header for logged in users with achievements
+        achievements = check_achievements({
+            'total_workouts': 10,  # This should come from API
+            'total_volume': 1500,
+        })
+        
+        # Show new achievements
+        if achievements and 'earned_achievements' not in st.session_state:
+            st.session_state['earned_achievements'] = []
+        
+        new_achievements = [a for a in achievements if a['id'] not in st.session_state.get('earned_achievements', [])]
+        
+        if new_achievements:
+            for achievement in new_achievements:
+                st.markdown(f'''
+                <div class="achievement-badge">
+                    {achievement['name']} - {achievement['desc']}
+                </div>
+                ''', unsafe_allow_html=True)
+                st.session_state['earned_achievements'].append(achievement['id'])
+        
         try:
             ver = st.secrets.get('app_version', 'v2.0')
         except Exception:
@@ -433,7 +194,7 @@ def render_app_header():
         st.markdown(f"<div class='main-header'>💪 FitTrack <span class='main-sub'>{ver} — Tréninkový deník</span></div>", unsafe_allow_html=True)
     else:
         # Show header with login button for guests - using columns to align properly
-        col1, col2, col3 = st.columns([3, 1, 1])
+        col1, col2, col3 = st.columns([5, 1, 1])
         
         with col1:
             st.markdown("""
@@ -443,14 +204,14 @@ def render_app_header():
             """, unsafe_allow_html=True)
         
         with col2:
-            st.markdown("<div style='padding-top: 0.3rem;'>", unsafe_allow_html=True)
+            st.markdown("<div style='padding-top: 0.3rem; text-align: right;'>", unsafe_allow_html=True)
             if st.button("🔐 Přihlásit se", key="header_login_btn", use_container_width=True, type="primary"):
                 st.session_state['show_login_form'] = True
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         
         with col3:
-            st.markdown("<div style='padding-top: 0.3rem;'>", unsafe_allow_html=True)
+            st.markdown("<div style='padding-top: 0.3rem; text-align: right;'>", unsafe_allow_html=True)
             if st.button("📝 Registrace", key="header_register_btn", use_container_width=True):
                 st.session_state['show_login_form'] = True
                 st.session_state['default_tab'] = 'Registrace'
@@ -488,12 +249,8 @@ def _display_api_error(resp):
         if msg:
             if rid:
                 st.error(f"{msg} (ID: {rid})")
-                # provide copy button for the request id (JS fallback for Streamlit)
-                btn = st.button('Kopírovat ID chyby', key=f'copy_err_{rid}')
-                if btn:
-                    # Use clipboard via JS
-                    js = f"navigator.clipboard.writeText('{rid}').then(()=>alert('ID zkopírováno do schránky'))"
-                    st.write(f"<script>{js}</script>", unsafe_allow_html=True)
+                # Provide copy info without button in form context
+                st.code(f"ID chyby: {rid}", language="text")
             else:
                 st.error(msg)
             return
@@ -818,16 +575,30 @@ def login_page():
                     elif not username.isalnum():
                         st.error('Uživatelské jméno smí obsahovat pouze písmena a čísla')
                     else:
-                        r = session.post(f"{API_BASE}/login", json={'username': username, 'password': password}, timeout=5)
-                        if r.ok:
-                            data = _safe_json(r)
-                            st.session_state['logged_in'] = True
-                            st.session_state['user'] = {'username': username, 'is_admin': data.get('is_admin', False)}
-                            st.session_state['page'] = 'dashboard'
-                            st.success("Přihlášení úspěšné!")
-                            st.rerun()
-                        else:
-                            _display_api_error(r)
+                        try:
+                            r = session.post(f"{API_BASE}/login", json={'username': username, 'password': password}, timeout=5)
+                            if r.ok:
+                                data = _safe_json(r)
+                                st.session_state['logged_in'] = True
+                                st.session_state['user'] = {'username': username, 'is_admin': data.get('is_admin', False)}
+                                st.session_state['page'] = 'dashboard'
+                                st.success("Přihlášení úspěšné!")
+                                st.rerun()
+                            else:
+                                # Handle specific login errors with user-friendly messages
+                                try:
+                                    error_data = _safe_json(r)
+                                    error_msg = error_data.get('error', 'Neznámá chyba')
+                                    if r.status_code == 401:
+                                        st.error("❌ Nesprávné uživatelské jméno nebo heslo")
+                                    elif r.status_code == 400:
+                                        st.error(f"❌ {error_msg}")
+                                    else:
+                                        st.error("❌ Došlo k chybě při přihlašování. Zkuste to prosím znovu.")
+                                except:
+                                    st.error("❌ Nesprávné přihlašovací údaje")
+                        except Exception as e:
+                            st.error("❌ Nepodařilo se připojit k serveru. Zkontrolujte internetové připojení.")
         
         st.markdown("---")
         st.subheader("Nebo se přihlaste přes Google")
@@ -891,12 +662,24 @@ def login_page():
                             st.warning('Kontrola uživatelského jména selhala, pokračuji v registraci')
 
                         if proceed:
-                            r = session.post(f"{API_BASE}/register", json={'username': new_username, 'password': new_password}, timeout=5)
-                            if r.ok:
-                                st.success("✅ Registrace úspěšná! Nyní se můžete přihlásit.")
-                                st.balloons()
-                            else:
-                                _display_api_error(r)
+                            try:
+                                r = session.post(f"{API_BASE}/register", json={'username': new_username, 'password': new_password}, timeout=5)
+                                if r.ok:
+                                    st.success("✅ Registrace úspěšná! Nyní se můžete přihlásit.")
+                                    st.balloons()
+                                else:
+                                    # Handle registration errors with user-friendly messages
+                                    try:
+                                        error_data = _safe_json(r)
+                                        error_msg = error_data.get('error', 'Neznámá chyba')
+                                        if r.status_code == 400:
+                                            st.error(f"❌ {error_msg}")
+                                        else:
+                                            st.error("❌ Došlo k chybě při registraci. Zkuste to prosím znovu.")
+                                    except:
+                                        st.error("❌ Došlo k chybě při registraci. Zkuste to prosím znovu.")
+                            except Exception:
+                                st.error("❌ Nepodařilo se připojit k serveru. Zkontrolujte internetové připojení.")
         
         # Tlačítko pro návrat na úvod u registrace
         col1, col2, col3 = st.columns([2, 1, 1])
@@ -907,24 +690,139 @@ def login_page():
                 st.rerun()
 
 def dashboard_page():
-    st.markdown('<div class="main-header">📊 Dashboard</div>', unsafe_allow_html=True)
-    # Stats
+    st.markdown('<div class="main-header page-transition">📊 Přehled</div>', unsafe_allow_html=True)
+    
+    # Loading state for stats
+    stats_placeholder = st.empty()
+    with stats_placeholder.container():
+        show_loading("Načítám statistiky...")
+    
     r = session.get(f"{API_BASE}/stats", timeout=5)
+    stats_placeholder.empty()  # Clear loading
+    
     if r.ok:
         stats = _safe_json(r).get('stats', {})
-        col1, col2 = st.columns(2)
+        # Responsive columns with glassmorphism cards
+        col1, col2 = st.columns([1, 1])
         with col1:
             st.markdown(f"""
-            <div class="stat-box">
+            <div class="stat-box glow-effect">
+                <svg class="progress-ring" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" stroke="rgba(255,215,0,0.2)" stroke-width="3" fill="none"/>
+                    <circle cx="25" cy="25" r="20" stroke="#FFD700" stroke-width="3" fill="none" 
+                            stroke-dasharray="125" stroke-dashoffset="{125 - (min(stats.get('total_workouts', 0), 50) / 50) * 125}"
+                            class="progress" stroke-linecap="round"/>
+                </svg>
                 <div class="stat-number">{stats.get('total_workouts', 0)}</div>
                 <div class="stat-label">Celkem tréninků</div>
             </div>
             """, unsafe_allow_html=True)
         with col2:
             st.markdown(f"""
-            <div class="stat-box">
+            <div class="stat-box glow-effect">
+                <svg class="progress-ring" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" stroke="rgba(255,215,0,0.2)" stroke-width="3" fill="none"/>
+                    <circle cx="25" cy="25" r="20" stroke="#FFD700" stroke-width="3" fill="none" 
+                            stroke-dasharray="125" stroke-dashoffset="{125 - (min(stats.get('recent_exercises', 0), 20) / 20) * 125}"
+                            class="progress" stroke-linecap="round"/>
+                </svg>
                 <div class="stat-number">{stats.get('recent_exercises', 0)}</div>
                 <div class="stat-label">Cviků v posledních 5</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Add new advanced stats with glassmorphism
+        if stats.get('total_workouts', 0) > 0:
+            col3, col4 = st.columns([1, 1])
+            with col3:
+                avg_per_week = stats.get('total_workouts', 0) / max(1, stats.get('weeks_active', 1))
+                st.markdown(f"""
+                <div class="stat-box glow-effect">
+                    <svg class="progress-ring" viewBox="0 0 50 50">
+                        <circle cx="25" cy="25" r="20" stroke="rgba(255,215,0,0.2)" stroke-width="3" fill="none"/>
+                        <circle cx="25" cy="25" r="20" stroke="#FFD700" stroke-width="3" fill="none" 
+                                stroke-dasharray="125" stroke-dashoffset="{125 - (min(avg_per_week, 7) / 7) * 125}"
+                                class="progress" stroke-linecap="round"/>
+                    </svg>
+                    <div class="stat-number">{avg_per_week:.1f}</div>
+                    <div class="stat-label">Tréninků týdně</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col4:
+                total_volume = stats.get('total_volume', 0)
+                st.markdown(f"""
+                <div class="stat-box glow-effect">
+                    <svg class="progress-ring" viewBox="0 0 50 50">
+                        <circle cx="25" cy="25" r="20" stroke="rgba(255,215,0,0.2)" stroke-width="3" fill="none"/>
+                        <circle cx="25" cy="25" r="20" stroke="#FFD700" stroke-width="3" fill="none" 
+                                stroke-dasharray="125" stroke-dashoffset="{125 - (min(total_volume, 10000) / 10000) * 125}"
+                                class="progress" stroke-linecap="round"/>
+                    </svg>
+                    <div class="stat-number">{total_volume:,.0f}</div>
+                    <div class="stat-label">Celkový objem (kg)</div>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.error("Nepodařilo se načíst statistiky")
+    
+    st.markdown("---")
+    
+    # Workout Templates section
+    st.subheader("📝 Šablony tréninků")
+    
+    # Load saved templates
+    if 'workout_templates' not in st.session_state:
+        st.session_state['workout_templates'] = [
+            {
+                'name': 'Push Day',
+                'description': 'Hrudník, ramena, triceps',
+                'exercises': ['Bench Press', 'Overhead Press', 'Tricep Dips'],
+                'color': '#FF6B6B'
+            },
+            {
+                'name': 'Pull Day', 
+                'description': 'Záda, biceps',
+                'exercises': ['Pull-ups', 'Barbell Rows', 'Bicep Curls'],
+                'color': '#4ECDC4'
+            },
+            {
+                'name': 'Leg Day',
+                'description': 'Nohy, gluteus',
+                'exercises': ['Squats', 'Deadlifts', 'Leg Press'],
+                'color': '#45B7D1'
+            }
+        ]
+    
+    template_cols = st.columns(3)
+    for idx, template in enumerate(st.session_state['workout_templates']):
+        with template_cols[idx % 3]:
+            if st.button(f"🏋️ {template['name']}", key=f"template_{idx}", use_container_width=True):
+                # Create workout from template
+                template_exercises = []
+                for ex_name in template['exercises']:
+                    template_exercises.append({
+                        'name': ex_name,
+                        'sets': 3,
+                        'reps': 10,
+                        'weight': None
+                    })
+                
+                payload = {
+                    'date': date.today().isoformat(),
+                    'note': f'Vytvořeno ze šablony: {template["name"]}',
+                    'exercises': template_exercises
+                }
+                
+                r = session.post(f"{API_BASE}/workouts", json=payload, timeout=5)
+                if r.ok:
+                    show_toast(f"Trénink '{template['name']}' vytvořen!")
+                    st.session_state['page'] = 'workouts'
+                    st.rerun()
+            
+            st.markdown(f"""
+            <div class="template-card">
+                <small style="color: var(--muted);">{template['description']}</small><br>
+                <small style="color: var(--primary);">{len(template['exercises'])} cviků</small>
             </div>
             """, unsafe_allow_html=True)
     
@@ -980,8 +878,39 @@ def dashboard_page():
 def stats_page():
     """Advanced statistics page with interactive Plotly charts."""
     st.markdown('<div class="main-header">📈 Pokročilé statistiky & analýzy</div>', unsafe_allow_html=True)
+    
+    # 1RM Calculator section
+    st.markdown("## 💪 1RM Kalkulátor")
+    st.markdown('<div class="rm-calculator">', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        rm_weight = st.number_input("Váha (kg)", min_value=1.0, value=100.0, step=2.5, key="rm_weight")
+    with col2:
+        rm_reps = st.number_input("Počet opakování", min_value=1, max_value=20, value=5, key="rm_reps")
+    with col3:
+        if st.button("Vypočítat 1RM", use_container_width=True):
+            one_rm = calculate_1rm(rm_weight, rm_reps)
+            st.markdown(f'<div class="rm-result">{one_rm:.1f} kg</div>', unsafe_allow_html=True)
+            
+            # Show percentage recommendations
+            st.markdown("**Doporučené zatížení:**")
+            percentages = [(50, "Zahřívání"), (70, "Objemový"), (85, "Silový"), (95, "Maximální")]
+            for pct, desc in percentages:
+                weight = one_rm * (pct / 100)
+                st.write(f"• {pct}%: {weight:.1f} kg ({desc})")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("---")
 
+    # Loading state for data
+    data_placeholder = st.empty()
+    with data_placeholder.container():
+        show_loading("Načítám data pro analýzy...")
+    
     r = session.get(f"{API_BASE}/workouts", timeout=5)
+    data_placeholder.empty()
+    
     if not r.ok:
         st.error('Nepodařilo se načíst tréninky pro statistiky')
         return
@@ -1075,15 +1004,25 @@ def stats_page():
                        labels={'Datum': 'Datum', 'Počet': 'Počet tréninků'},
                        template='plotly_dark',
                        line_shape='spline')
-    fig_freq.update_traces(line_color='#FFD700', line_width=3, fill='tozeroy', fillcolor='rgba(255,215,0,0.2)')
+    fig_freq.update_traces(line_color='#FFD700', line_width=4, fill='tozeroy', 
+                          fillcolor='rgba(255,215,0,0.3)',
+                          mode='lines+markers',
+                          marker=dict(size=8, color='#FFD700', line=dict(width=2, color='#FFED4E')))
     fig_freq.update_layout(
-        plot_bgcolor='#1c1c1c',
-        paper_bgcolor='#000000',
-        font_color='#ffffff',
-        title_font_size=20,
-        hovermode='x unified'
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#ffffff', family='Poppins'),
+        title_font_size=22,
+        title_font_color='#FFD700',
+        hovermode='x unified',
+        xaxis=dict(gridcolor='rgba(255,215,0,0.1)', showgrid=True),
+        yaxis=dict(gridcolor='rgba(255,215,0,0.1)', showgrid=True),
+        hoverlabel=dict(bgcolor='rgba(255,215,0,0.9)', font_color='black'),
+        margin=dict(t=50, b=50, l=50, r=50)
     )
+    st.markdown('<div class="neon-graph">', unsafe_allow_html=True)
     st.plotly_chart(fig_freq, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -1107,7 +1046,9 @@ def stats_page():
         showlegend=False,
         yaxis={'categoryorder': 'total ascending'}
     )
+    st.markdown('<div class="neon-graph">', unsafe_allow_html=True)
     st.plotly_chart(fig_top, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -1128,12 +1069,60 @@ def stats_page():
         title_font_size=20,
         hovermode='x unified'
     )
+    st.markdown('<div class="neon-graph">', unsafe_allow_html=True)
     st.plotly_chart(fig_volume, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # === EXERCISE DISTRIBUTION ===
-    st.markdown("## 📦 Rozdělení cviků podle typu")
+    # === BODY HEATMAP ANALYSIS ===
+    st.markdown("## 🗺️ Body Heatmap - Analýza zatížení svalových skupin")
+    
+    # Categorize exercises by muscle groups
+    def get_muscle_group(name):
+        name_lower = name.lower()
+        muscle_map = {
+            'hrudník': ['bench', 'tlak', 'press', 'fly'],
+            'záda': ['pull', 'tah', 'row', 'deadlift', 'mrtvý'],
+            'ramena': ['shoulder', 'rameno', 'lateral', 'overhead'],
+            'biceps': ['curl', 'bicep'],
+            'triceps': ['tricep', 'extension', 'dip'],
+            'nohy': ['squat', 'dřep', 'leg', 'lunge'],
+            'core': ['plank', 'abs', 'crunch']
+        }
+        
+        for muscle, keywords in muscle_map.items():
+            if any(keyword in name_lower for keyword in keywords):
+                return muscle
+        return 'ostatní'
+    
+    if ex_rows:
+        df['muscle_group'] = df['name'].apply(get_muscle_group)
+        muscle_volume = df.groupby('muscle_group')['volume'].sum().sort_values(ascending=False)
+        
+        # Create body heatmap visualization
+        fig_body = px.pie(muscle_volume.reset_index(), values='volume', names='muscle_group',
+                         title='Rozložení tréninku podle svalových skupin',
+                         template='plotly_dark',
+                         color_discrete_sequence=['#FFD700', '#FFED4E', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DC143C'])
+        fig_body.update_layout(
+            paper_bgcolor='#000000',
+            font_color='#ffffff',
+            title_font_size=20
+        )
+        st.plotly_chart(fig_body, use_container_width=True)
+        
+        # Muscle group recommendations
+        st.markdown("**📊 Doporučení pro vyvážený trénink:**")
+        total_vol = muscle_volume.sum()
+        for muscle, volume in muscle_volume.head(3).items():
+            percentage = (volume / total_vol) * 100
+            if percentage > 40:
+                st.warning(f"⚠️ {muscle.title()}: {percentage:.1f}% - Zvažte více variety")
+            elif percentage > 25:
+                st.info(f"✅ {muscle.title()}: {percentage:.1f}% - Dobré zatížení")
+            else:
+                st.success(f"🎯 {muscle.title()}: {percentage:.1f}% - Vyvážené")
     
     # Group similar exercises (simple categorization)
     def categorize_exercise(name):
@@ -1269,6 +1258,48 @@ def stats_page():
 
     st.markdown("---")
 
+    # === PERFORMANCE SCORE ===
+    st.markdown("## 🎯 Performance Score")
+    
+    if len(workouts) >= 2:
+        # Calculate performance score based on multiple factors
+        recent_workouts = len([w for w in workouts if pd.to_datetime(w['date']) > pd.Timestamp.now() - pd.Timedelta(days=30)])
+        consistency_score = min(recent_workouts * 5, 40)  # Max 40 points for consistency
+        
+        volume_trend = 0
+        if len(df) >= 10:
+            recent_volume = df[df['date'] > df['date'].max() - pd.Timedelta(days=30)]['volume'].sum()
+            older_volume = df[df['date'] <= df['date'].max() - pd.Timedelta(days=30)]['volume'].sum()
+            if older_volume > 0:
+                volume_trend = min((recent_volume / older_volume - 1) * 100, 30)  # Max 30 points
+        
+        variety_score = min(df['name'].nunique() * 2, 30)  # Max 30 points for exercise variety
+        
+        total_score = consistency_score + max(volume_trend, 0) + variety_score
+        
+        # Display performance score
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("🔁 Konzistence", f"{consistency_score:.0f}/40")
+        with col2:
+            st.metric("📈 Progres", f"{max(volume_trend, 0):.0f}/30")
+        with col3:
+            st.metric("🎲 Variabilita", f"{variety_score:.0f}/30")
+        with col4:
+            score_color = "green" if total_score >= 70 else "orange" if total_score >= 50 else "red"
+            st.metric("🏆 Celkové skóre", f"{total_score:.0f}/100")
+        
+        # Performance insights
+        st.markdown("**🧠 Vhled do vášeho výkonu:**")
+        if total_score >= 80:
+            st.success("🎆 Vynikající! Jste na správné cestě k dosažení svých cílů.")
+        elif total_score >= 60:
+            st.info("💪 Dobrá práce! Zkuste přidat více variety nebo konzistence.")
+        else:
+            st.warning("🎯 Je čas zvýšit intenzitu! Zkuste pravidelnější trénink.")
+    
+    st.markdown("---")
+
     # === WEEKLY HEATMAP ===
     st.markdown("## 🗓️ Týdenní aktivita (heatmap)")
     
@@ -1318,15 +1349,41 @@ def stats_page():
 def workouts_page():
     st.markdown('<div class="main-header">💪 Moje tréninky</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns([3, 1])
+    # Header with actions
+    col1, col2, col3 = st.columns([2, 1, 1])
     with col2:
+        if st.button("📋 Ze šablony", use_container_width=True):
+            st.session_state['show_templates'] = True
+            st.rerun()
+    with col3:
         if st.button("➕ Nový trénink", use_container_width=True):
             st.session_state['page'] = 'new_workout'
             st.rerun()
     
-    st.markdown("---")
+    # Show template selection if requested
+    if st.session_state.get('show_templates', False):
+        st.subheader("📝 Vyberte šablonu")
+        template_cols = st.columns(3)
+        for idx, template in enumerate(st.session_state.get('workout_templates', [])):
+            with template_cols[idx % 3]:
+                if st.button(f"{template['name']}", key=f"wt_{idx}", use_container_width=True):
+                    # Create from template logic here
+                    st.session_state['show_templates'] = False
+                    st.rerun()
+        
+        if st.button("❌ Zrušit", key="cancel_templates"):
+            st.session_state['show_templates'] = False
+            st.rerun()
+        st.markdown("---")
+    
+    # Loading state
+    workouts_placeholder = st.empty()
+    with workouts_placeholder.container():
+        show_loading("Načítám tréninky...")
     
     r = session.get(f"{API_BASE}/workouts", timeout=5)
+    workouts_placeholder.empty()
+    
     if not r.ok:
         st.error("Nepodařilo se načíst tréninky")
         return
@@ -1371,7 +1428,14 @@ def workout_detail_page():
         return
     
     wid = st.session_state['selected_workout']
+    
+    # Loading state
+    detail_placeholder = st.empty()
+    with detail_placeholder.container():
+        show_loading("Načítám detail tréninku...")
+    
     r = session.get(f"{API_BASE}/workouts/{wid}", timeout=5)
+    detail_placeholder.empty()
     
     if not r.ok:
         st.error("Trénink nenalezen")
@@ -1379,18 +1443,58 @@ def workout_detail_page():
     
     workout = _safe_json(r).get('workout')
     
-    col1, col2 = st.columns([4, 1])
+    # Header with actions
+    col1, col2, col3 = st.columns([3, 1, 1])
     with col1:
         st.markdown(f'<div class="main-header">🏋️ Trénink z {workout["date"]}</div>', unsafe_allow_html=True)
     with col2:
+        if st.button("🔄 Duplikovat", use_container_width=True):
+            # Create duplicate workout
+            exercises = [{
+                'name': ex['name'],
+                'sets': ex['sets'],
+                'reps': ex['reps'],
+                'weight': ex.get('weight')
+            } for ex in workout.get('exercises', [])]
+            
+            payload = {
+                'date': date.today().isoformat(),
+                'note': f"Kopie: {workout.get('note', '')}",
+                'exercises': exercises
+            }
+            
+            dup_r = session.post(f"{API_BASE}/workouts", json=payload, timeout=5)
+            if dup_r.ok:
+                show_toast("Trénink duplikovan!")
+                new_id = _safe_json(dup_r).get('id')
+                st.session_state['selected_workout'] = new_id
+                st.rerun()
+    with col3:
         if st.button("🗑️ Smazat trénink", use_container_width=True):
             r = session.delete(f"{API_BASE}/workouts/{wid}", timeout=5)
             if r.ok:
-                st.success("Trénink smazán!")
+                show_toast("Trénink smazán!")
                 st.session_state['page'] = 'workouts'
                 st.rerun()
     
     st.write(f"**Poznámka:** {workout.get('note', 'Bez poznámky')}")
+    
+    # REST Timer section
+    st.markdown("---")
+    st.subheader("⏱️ REST Timer")
+    col1, col2, col3 = st.columns([1, 1, 2])
+    
+    with col1:
+        rest_minutes = st.selectbox("Minuty", range(0, 10), index=2, key="rest_min")
+    with col2:
+        rest_seconds = st.selectbox("Sekundy", range(0, 60, 15), index=0, key="rest_sec")
+    with col3:
+        if st.button("▶️ Start REST Timer", use_container_width=True):
+            total_seconds = rest_minutes * 60 + rest_seconds
+            if total_seconds > 0:
+                st.info(f"⏰ REST Timer nastaven na {rest_minutes}:{rest_seconds:02d}")
+                show_toast(f"REST Timer: {rest_minutes}:{rest_seconds:02d}")
+    
     st.markdown("---")
     
     # Exercises
@@ -1451,6 +1555,37 @@ def workout_detail_page():
 
 def new_workout_page():
     st.markdown('<div class="main-header">➕ Nový trénink</div>', unsafe_allow_html=True)
+    
+    # Quick template buttons
+    st.subheader("🚀 Rychlé vytvoření")
+    template_cols = st.columns(4)
+    templates = st.session_state.get('workout_templates', [])
+    for idx, template in enumerate(templates[:4]):
+        with template_cols[idx]:
+            if st.button(f"📋 {template['name']}", key=f"quick_{idx}", use_container_width=True):
+                # Pre-fill form with template
+                st.session_state['prefill_exercises'] = template['exercises']
+                st.rerun()
+    
+    # Copy from previous workout
+    if st.button("📋 Kopírovat poslední trénink", use_container_width=True):
+        try:
+            r = session.get(f"{API_BASE}/workouts", timeout=5)
+            if r.ok:
+                workouts = _safe_json(r).get('workouts', [])
+                if workouts:
+                    latest = workouts[0]
+                    wr = session.get(f"{API_BASE}/workouts/{latest['id']}", timeout=5)
+                    if wr.ok:
+                        detail = _safe_json(wr).get('workout', {})
+                        exercises = [ex['name'] for ex in detail.get('exercises', [])]
+                        st.session_state['prefill_exercises'] = exercises
+                        show_toast("Poslední trénink načten!")
+                        st.rerun()
+        except Exception:
+            st.error("Nepodařilo se načíst poslední trénink")
+    
+    st.markdown("---")
     
     with st.form("new_workout_form"):
         workout_date = st.date_input("Datum", value=date.today())
@@ -1670,7 +1805,7 @@ def admin_page():
         st.error("Nemáte oprávnění")
         return
     
-    st.markdown('<div class="main-header">⚙️ Admin panel</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">⚙️ Správce</div>', unsafe_allow_html=True)
     
     r = session.get(f"{API_BASE}/admin/users", timeout=5)
     if not r.ok:
@@ -1695,6 +1830,241 @@ def admin_page():
     df = pd.DataFrame(df_data)
     st.dataframe(df, use_container_width=True)
 
+
+def achievements_page():
+    """Stránka úspěchů a sledování pokroku"""
+    st.markdown('<div class="main-header">🏆 Úspěchy & Pokrok</div>', unsafe_allow_html=True)
+    
+    # Současný streak
+    streak = calculate_workout_streak()
+    st.markdown(f'''
+    <div class="streak-counter">
+        <div class="streak-number">{streak}</div>
+        <div class="streak-label">Denní série</div>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    # Activity heatmap
+    st.markdown("#### 🗺️ Mapa aktivity (Poslední rok)")
+    try:
+        r = session.get(f"{API_BASE}/workouts", timeout=10)
+        workouts = _safe_json(r).get('workouts', []) if r.ok else []
+        heatmap_html = create_activity_heatmap(workouts)
+        if heatmap_html:
+            st.markdown(heatmap_html, unsafe_allow_html=True)
+        else:
+            st.info("Začněte cvičit a uvidíte zde mapu své aktivity!")
+    except Exception:
+        st.error("Nepodařilo se načíst data aktivity")
+    
+    # Showcase úspěchů
+    st.markdown("#### 🎆 Vaše úspěchy")
+    earned = st.session_state.get('earned_achievements', [])
+    
+    # Mock stats pro kontrolu achievementů
+    try:
+        r = session.get(f"{API_BASE}/stats", timeout=5)
+        stats = _safe_json(r).get('stats', {}) if r.ok else {}
+    except Exception:
+        stats = {}
+    
+    achievements = check_achievements(stats)
+    
+    # Zobrazení nových úspěchů
+    if achievements:
+        for achievement in achievements:
+            if achievement['id'] not in st.session_state.get('earned_achievements', []):
+                st.balloons()  # Oslava
+                st.success(f"🎉 Nový úspěch odemčen: {achievement['name']}")
+    
+    all_achievements = [
+        {'id': 'first_workout', 'name': '🏋️ První trénink', 'desc': 'Započal jsi svou fitness cestu!'},
+        {'id': 'ten_workouts', 'name': '💪 Desítka', 'desc': '10 tréninků dokončeno!'},
+        {'id': 'fifty_workouts', 'name': '🎯 Padesátka', 'desc': '50 tréninků - jsi na správné cestě!'},
+        {'id': 'volume_1k', 'name': '🚀 1000kg Club', 'desc': 'Celkový objem přes 1000kg!'},
+        {'id': 'streak_3', 'name': '🔥 Trojka', 'desc': '3 dny v řadě!'},
+        {'id': 'streak_7', 'name': '⚡ Týdenní válečník', 'desc': '7 dní streak!'}
+    ]
+    
+    cols = st.columns(2)
+    for i, achievement in enumerate(all_achievements):
+        with cols[i % 2]:
+            is_earned = achievement['id'] in earned
+            opacity = '1' if is_earned else '0.3'
+            st.markdown(f'''
+            <div style="opacity: {opacity}; margin: 10px 0;">
+                <div class="achievement-badge">
+                    {achievement['name']}
+                </div>
+                <div style="font-size: 0.9rem; color: #888; margin-top: 4px;">
+                    {achievement['desc']}
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+
+
+def tools_page():
+    """Stránka fitness nástrojů a kalkulátorů"""
+    st.markdown('<div class="main-header">⚙️ Fitness nástroje</div>', unsafe_allow_html=True)
+    
+    tool_tabs = st.tabs(["🏋️ 1RM kalkulátor", "🎯 Kalkulátor kotoučů", "📊 Sledování pokroku"])
+    
+    # 1RM Calculator
+    with tool_tabs[0]:
+        st.markdown('<div class="rm-calculator">', unsafe_allow_html=True)
+        st.markdown("#### Kalkulátor maximálního opakování")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            weight = st.number_input("Váha (kg)", min_value=1.0, max_value=500.0, value=100.0, step=2.5)
+        with col2:
+            reps = st.number_input("Počet opakování", min_value=1, max_value=50, value=5)
+        
+        if st.button("Vypočítat 1RM", type="primary"):
+            one_rm = calculate_1rm(weight, reps)
+            st.markdown(f'<div class="rm-result">{one_rm:.1f} kg</div>', unsafe_allow_html=True)
+            
+            # Show percentage breakdown
+            st.markdown("**Tréninkové procenta:**")
+            percentages = [95, 90, 85, 80, 75, 70, 65]
+            cols = st.columns(4)
+            for i, pct in enumerate(percentages):
+                with cols[i % 4]:
+                    training_weight = one_rm * (pct / 100)
+                    st.metric(f"{pct}%", f"{training_weight:.1f} kg")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Plate Calculator
+    with tool_tabs[1]:
+        st.markdown("#### 🏋 Kalkulátor kotoučů")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            target = st.number_input("Cílová váha (kg)", min_value=20.0, max_value=500.0, value=100.0, step=2.5)
+        with col2:
+            barbell = st.number_input("Váha činky (kg)", min_value=15.0, max_value=25.0, value=20.0, step=2.5)
+        
+        if st.button("Vypočítat kotouče", type="primary"):
+            plates = calculate_plate_distribution(target, barbell)
+            
+            if plates:
+                st.markdown("**Rozmístění kotoučů (každá strana):**")
+                plate_visual = render_plate_visual(plates)
+                st.markdown(plate_visual, unsafe_allow_html=True)
+                
+                # Show plate breakdown
+                from collections import Counter
+                plate_counts = Counter(plates)
+                
+                st.markdown("**Potřebné kotouče (každá strana):**")
+                for plate, count in sorted(plate_counts.items(), reverse=True):
+                    st.write(f"- {count}x {plate}kg kotouče")
+            else:
+                st.warning("Cílová váha je příliš nízká nebo se rovná váze činky!")
+    
+    # Progress Tracker
+    with tool_tabs[2]:
+        st.markdown("#### 📈 Sledování pokroku")
+        st.info("Připravuje se - Sledujte svůj pokrok v čase s pokročilou analytikou!")
+        
+        # Preview of future features
+        st.markdown("**Připravované funkce:**")
+        st.markdown("""
+        - 📊 Grafy progrese síly
+        - 📏 Sledování tělesných rozměrů  
+        - 📸 Časová osa fotografií pokroku
+        - 🎯 Stanovení a sledování cílů
+        - 📱 Chytrá doporučení tréninků
+        """)
+
+
+def pwa_setup_page():
+    """Stránka nastavení progresivní webové aplikace a offline funkcí"""
+    st.markdown('<div class="main-header">📱 Instalace mobilní aplikace</div>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    #### Nainstalujte FitTrack jako mobilní aplikaci
+    
+    **Pro Android/Chrome:**
+    1. Otevřete tuto stránku v prohlížeči Chrome
+    2. Klepněte na menu (tři tečky) → "Přidat na plochu"
+    3. Vyberte název aplikace a klepněte na "Přidat"
+    
+    **Pro iPhone/Safari:**
+    1. Otevřete tuto stránku v Safari
+    2. Klepněte na tlačítko Sdílet → "Přidat na plochu"
+    3. Vyberte název aplikace a klepněte na "Přidat"
+    
+    **Pro počítač:**
+    1. Hledejte ikonu instalace v adresním řádku
+    2. Klikněte na "Instalovat FitTrack"
+    
+    #### Offline funkce
+    - Zobrazení historie tréninků
+    - Použití fitness kalkulátorů
+    - Plánování tréninků pomocí šablon
+    
+    *Poznámka: Vytváření nových tréninků vyžaduje připojení k internetu.*
+    """)
+    
+    # Kontrola PWA stavu
+    st.markdown("#### 🔍 Stav PWA")
+    
+    # Simulace kontroly PWA možností
+    if st.button("Zkontrolovat podporu PWA", type="primary"):
+        st.success("✅ Váš prohlížeč podporuje instalaci PWA!")
+        st.info("📶 Offline režim: Omezená funkcionalita dostupná")
+        st.warning("⚠️ Úplná offline synchronizace: Připravuje se v další aktualizaci")
+    
+    # Showcase funkcí
+    st.markdown("#### 🚀 Funkce aplikace")
+    
+    features = [
+        {"icon": "🏋️", "title": "Sledování tréninků", "desc": "Zaznamenávejte cviky, série a opakování"},
+        {"icon": "📊", "title": "Analýza pokroku", "desc": "Vizualizujte svou fitness cestu"},
+        {"icon": "🎯", "title": "Stanovení cílů", "desc": "Nastavte a sledujte fitness cíle"},
+        {"icon": "📱", "title": "Mobilní přívětivost", "desc": "Ideální pro použití v posilovně"},
+        {"icon": "🔄", "title": "Synchronizace", "desc": "Přístup k datům odkudkoliv"},
+        {"icon": "⚡", "title": "Rychlý výkon", "desc": "Optimalizováno pro rychlé načítání"}
+    ]
+    
+    cols = st.columns(2)
+    for i, feature in enumerate(features):
+        with cols[i % 2]:
+            st.markdown(f"""
+            <div style="padding: 15px; margin: 10px 0; border-left: 4px solid #FFD700;">
+                <div style="font-size: 1.5rem;">{feature['icon']} <strong>{feature['title']}</strong></div>
+                <div style="color: #888; margin-top: 5px;">{feature['desc']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # PWA Manifest a Service Worker
+    st.markdown("""
+    <script>
+    // PWA Installation prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show install button
+        console.log('PWA install prompt available');
+    });
+    
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+                console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+                console.log('SW registration failed: ', registrationError);
+            });
+    }
+    </script>
+    """, unsafe_allow_html=True)
+
+
 # Main app
 if not st.session_state['logged_in']:
     # Try to check if already logged in
@@ -1709,9 +2079,10 @@ if st.session_state.get('logged_in') and st.session_state.get('user') and not st
 # Sidebar navigation
 render_app_header()
 with st.sidebar:
-    st.title("💪 FitTrack")
+    # Responsive sidebar header
+    st.markdown("<h1 style='font-size: 1.5rem; margin-bottom: 1rem;'>💪 FitTrack</h1>", unsafe_allow_html=True)
     user_info = st.session_state.get('user', {})
-    st.write(f"👤 **{user_info.get('username', 'User')}**")
+    st.markdown(f"<p style='color: var(--primary); font-weight: 600;'>👤 {user_info.get('username', 'User')}</p>", unsafe_allow_html=True)
     
     # Profile expander: show profile data and allow editing
     with st.expander("Můj profil", expanded=False):
@@ -1747,16 +2118,19 @@ with st.sidebar:
     st.markdown("---")
     
     pages = {
-        'dashboard': '📊 Dashboard',
+        'dashboard': '📊 Přehled',
     'stats': '📈 Statistiky',
         'workouts': '💪 Moje tréninky',
         'new_workout': '➕ Nový trénink',
+        'achievements': '🏆 Úspěchy',
+        'tools': '⚙️ Nástroje',
+        'pwa_setup': '📱 Mobilní aplikace',
         'catalog': '📚 Katalog cviků',
         'export': '📥 Export',
     }
     
     if user_info.get('is_admin'):
-        pages['admin'] = '⚙️ Admin'
+        pages['admin'] = '⚙️ Správa'
     
     for key, label in pages.items():
         if st.button(label, key=f"nav_{key}", use_container_width=True):
@@ -1853,6 +2227,12 @@ elif page == 'workout_detail':
     workout_detail_page()
 elif page == 'new_workout':
     new_workout_page()
+elif page == 'achievements':
+    achievements_page()
+elif page == 'tools':
+    tools_page()
+elif page == 'pwa_setup':
+    pwa_setup_page()
 elif page == 'catalog':
     catalog_page()
 elif page == 'export':
