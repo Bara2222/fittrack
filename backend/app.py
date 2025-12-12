@@ -34,7 +34,7 @@ def create_app(config_name='development'):
     app = Flask(__name__)
     
     # Load configuration
-    from config import get_config
+    from backend.config import get_config
     config_class = get_config()
     app.config.from_object(config_class)
     
@@ -58,7 +58,7 @@ def create_app(config_name='development'):
     _setup_logging(app)
     
     # Register blueprints
-    from api import api_bp
+    from backend.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
 
     # Assign a per-request id for easier troubleshooting
@@ -97,7 +97,7 @@ def create_app(config_name='development'):
     # User loader for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
-        from database_models import User
+        from backend.database_models import User
         return User.query.get(int(user_id))
     
     # Root endpoint

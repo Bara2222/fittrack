@@ -24,115 +24,32 @@ GLOBAL_CSS = r"""
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 html, body, [class*='css'] { font-family: 'Poppins', sans-serif; color:#1a1a1a; background:var(--bg) !important }
 
-/* Button alignment styles - Right align login/register buttons */
-div[data-testid="column"]:nth-child(2) .stButton,
-div[data-testid="column"]:nth-child(3) .stButton {
-    text-align: right !important;
-    justify-content: flex-end !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-end !important;
-}
-
-/* Header button container alignment - only for specific header columns */
-div[data-testid="column"]:nth-child(2) .stButton > button,
-div[data-testid="column"]:nth-child(3) .stButton > button {
-    width: auto !important;
-    height: 40px !important;
-    margin: 0 !important;
-    padding: 8px 16px !important;
-    font-size: 14px !important;
+/* Reset all button base styles */
+.stButton > button {
+    min-height: 44px !important;
+    padding: 10px 24px !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
-    white-space: nowrap !important;
-    min-width: 90px !important;
-    max-width: none !important;
-    color: #000000 !important;
-    background-color: #ffd700 !important;
-    border: 1px solid #ffd700 !important;
-}
-
-/* Primary button specific styling - only for header */
-div[data-testid="column"]:nth-child(2) .stButton > button[data-testid="baseButton-primary"],
-div[data-testid="column"]:nth-child(3) .stButton > button[data-testid="baseButton-primary"] {
-    background-color: #ffd700 !important;
-    color: #000000 !important;
-    border: 2px solid #ffd700 !important;
-}
-
-/* Secondary button specific styling - only for header */
-div[data-testid="column"]:nth-child(2) .stButton > button[data-testid="baseButton-secondary"],
-div[data-testid="column"]:nth-child(3) .stButton > button[data-testid="baseButton-secondary"] {
-    background-color: transparent !important;
-    color: #ffd700 !important;
-    border: 2px solid #ffd700 !important;
-}
-
-/* Hover effects - only for header buttons */
-div[data-testid="column"]:nth-child(2) .stButton > button:hover,
-div[data-testid="column"]:nth-child(3) .stButton > button:hover {
-    background-color: #ffed4e !important;
-    color: #000000 !important;
-    border-color: #ffed4e !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3) !important;
-}
-
-/* Special styling for "ZAČÍT CVIČIT" button */
-button[aria-label="🚀 ZAČÍT CVIČIT"] {
-    width: 300px !important;
-    height: 50px !important;
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    margin: 20px auto !important;
-    display: block !important;
-    border-radius: 25px !important;
-    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4) !important;
+    line-height: 1.4 !important;
+    border-radius: 10px !important;
     transition: all 0.3s ease !important;
+    white-space: normal !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    word-wrap: break-word !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
 }
 
-button[aria-label="🚀 ZAČÍT CVIČIT"]:hover {
-    transform: translateY(-3px) scale(1.05) !important;
-    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6) !important;
-    background: linear-gradient(45deg, #ffed4e, #fff352) !important;
-}
-
-/* Alternative selector for main start button */
-div[data-testid="column"] .stButton button:has-text("🚀 ZAČÍT CVIČIT"),
-div[data-testid="column"] .stButton > button[data-testid="baseButton-primary"]:contains("ZAČÍT CVIČIT") {
-    width: 300px !important;
-    height: 50px !important;
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    margin: 20px auto !important;
-    display: block !important;
-    border-radius: 25px !important;
-    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4) !important;
-}
-
-/* More specific selector using position */
-div[data-testid="column"]:nth-child(2) .stButton button {
-    width: 300px !important;
-    height: 50px !important;
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    margin: 20px auto !important;
-    display: block !important;
-    border-radius: 25px !important;
-    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4) !important;
-    transition: all 0.3s ease !important;
-}
-
-/* Specific button styling for header */
-div[data-testid="column"]:nth-child(2) button,
-div[data-testid="column"]:nth-child(3) button {
-    display: block !important;
-    margin-left: auto !important;
-    margin-right: 0 !important;
-    width: auto !important;
-    height: 40px !important;
+/* Ensure button text is visible and properly sized */
+.stButton > button span,
+.stButton > button p {
+    color: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    line-height: inherit !important;
 }
 
 /* Theme variables - Black & Yellow */
@@ -161,26 +78,38 @@ div[data-testid="column"]:nth-child(3) button {
 
 /* Mobile-First Responsive Grid */
 @media (max-width: 640px) {
-    .block-container { padding: 1rem 0.5rem; }
-    .main-header { font-size: 24px; padding: 16px 20px; }
-    .stat-number { font-size: 40px; }
-    .card { padding: 20px; border-radius: 16px; }
+    .block-container { padding: 0.5rem; }
+    .main-header { font-size: 22px; padding: 12px 16px; }
+    .stat-number { font-size: 36px; }
+    .stat-label { font-size: 12px; }
+    .card { padding: 16px; border-radius: 12px; margin-bottom: 12px; }
     .stTabs [data-baseweb="tab"] { padding: 8px 12px; font-size: 12px; }
+    .stButton>button { min-height: 50px !important; font-size: 15px !important; padding: 12px 20px !important; }
+    .empty-state { padding: 2rem 1rem; }
+    .empty-state-icon { font-size: 3rem; }
+    .loading-container { padding: 2rem 1rem; }
 }
 @media (max-width: 768px) {
-    .block-container { padding: 1.5rem 1rem; }
-    .main-header { font-size: 28px; }
-    .stat-number { font-size: 48px; }
+    .block-container { padding: 1rem 0.75rem; }
+    .main-header { font-size: 26px; padding: 14px 18px; }
+    .stat-number { font-size: 44px; }
+    .card { padding: 24px; border-radius: 18px; }
+    .stButton>button { min-height: 48px !important; }
 }
 @media (max-width: 1024px) {
-    .block-container { max-width: 100%; padding: 1.5rem; }
+    .block-container { max-width: 100%; padding: 1.25rem; }
+    .main-header { font-size: 30px; }
 }
 
 /* Touch-friendly elements */
 @media (hover: none) and (pointer: coarse) {
-    .stButton>button { min-height: 48px; font-size: 16px; }
+    .stButton>button { min-height: 52px !important; font-size: 16px !important; }
     .card { margin-bottom: 16px; }
-    .stTextInput>div>div>input { min-height: 48px; }
+    .stTextInput>div>div>input { min-height: 52px !important; font-size: 16px !important; }
+    .stSelectbox>div>div>div { min-height: 52px !important; }
+    .stNumberInput>div>div>input { min-height: 52px !important; }
+    /* Prevent zoom on input focus on iOS */
+    input, select, textarea { font-size: 16px !important; }
 }
 .block-container::before{
     content: '';
@@ -236,47 +165,78 @@ div[data-testid="column"]:nth-child(3) button {
     margin-left:16px;
 }
 
-/* Primary buttons */
-.stButton>button{
-    background: linear-gradient(135deg, var(--primary), var(--accent)) !important;
-    color: var(--text-secondary) !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 14px 28px !important;
-    font-weight: 700 !important;
-    font-size: 16px !important;
-    transition: all .4s cubic-bezier(0.23, 1, 0.32, 1) !important;
-    box-shadow: 0 6px 20px rgba(255,215,0,0.3) !important;
-    text-transform: none !important;
-    border: 2px solid transparent !important;
-    position: relative;
-    overflow: hidden;
-}
-.stButton>button::before{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.5s ease;
-}
-.stButton>button:hover{
-    transform: translateY(-3px) scale(1.05) !important;
-    box-shadow: 0 12px 30px rgba(255,215,0,0.6), 
-                0 0 40px rgba(255,215,0,0.4) !important;
-    border-color: rgba(255,255,255,0.3) !important;
-}
-.stButton>button:hover::before{
-    left: 100%;
-}
-.stButton>button:active{
-    transform: translateY(-1px) scale(1.02) !important;
-    box-shadow: 0 6px 20px rgba(255,215,0,0.4) !important;
+/* Primary buttons - default styling */
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="baseButton-primary"] {
+    background: linear-gradient(135deg, #ffd700, #ffed4e) !important;
+    color: #000000 !important;
+    border: 2px solid #ffd700 !important;
+    box-shadow: 0 4px 12px rgba(255,215,0,0.3) !important;
 }
 
-/* Tabs styling */
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="baseButton-primary"]:hover {
+    background: linear-gradient(135deg, #ffed4e, #fff44d) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(255,215,0,0.5) !important;
+}
+
+/* Secondary buttons */
+.stButton > button[kind="secondary"],
+.stButton > button[data-testid="baseButton-secondary"] {
+    background: transparent !important;
+    color: #ffd700 !important;
+    border: 2px solid #ffd700 !important;
+    box-shadow: 0 2px 8px rgba(255,215,0,0.2) !important;
+}
+
+.stButton > button[kind="secondary"]:hover,
+.stButton > button[data-testid="baseButton-secondary"]:hover {
+    background: rgba(255,215,0,0.1) !important;
+    border-color: #ffed4e !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(255,215,0,0.3) !important;
+}
+
+/* Tertiary/default buttons */
+.stButton > button:not([kind]):not([data-testid*="primary"]):not([data-testid*="secondary"]) {
+    background: linear-gradient(135deg, #ffd700, #ffed4e) !important;
+    color: #000000 !important;
+    border: 2px solid #ffd700 !important;
+    box-shadow: 0 4px 12px rgba(255,215,0,0.3) !important;
+}
+
+.stButton > button:not([kind]):not([data-testid*="primary"]):not([data-testid*="secondary"]):hover {
+    background: linear-gradient(135deg, #ffed4e, #fff44d) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(255,215,0,0.5) !important;
+}
+
+/* Full width buttons - ensure proper sizing */
+div[data-testid="column"] .stButton[data-testid="baseButton-fullWidth"] > button,
+div[data-testid="column"] .stButton > button[style*="width: 100%"] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Small delete/action buttons */
+.stButton > button[aria-label*="❌"],
+.stButton > button[aria-label*="🗑️"] {
+    min-width: 44px !important;
+    max-width: 60px !important;
+    padding: 8px 12px !important;
+    font-size: 18px !important;
+}
+
+/* Form submit buttons */
+button[type="submit"],
+button[kind="formSubmit"] {
+    min-height: 48px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+}
+
+/* Theme variables - Black & Yellow */
 .stTabs {
     margin: 20px 0;
     border: 2px solid rgba(255,215,0,0.2);
@@ -695,6 +655,70 @@ div[data-testid="column"]:nth-child(3) button {
 @keyframes slideIn {
     from { transform: translateX(100%); }
     to { transform: translateX(0); }
+}
+
+/* Loading spinner */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    min-height: 200px;
+}
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255,215,0,0.2);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.loading-text {
+    color: var(--primary);
+    margin-top: 1rem;
+    font-size: 16px;
+    font-weight: 600;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(28, 28, 28, 0.5);
+    border-radius: 20px;
+    border: 2px dashed rgba(255,215,0,0.3);
+    margin: 2rem 0;
+}
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+    animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+.empty-state-title {
+    color: var(--primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.empty-state-text {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 /* Workout template cards */

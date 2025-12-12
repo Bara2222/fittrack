@@ -11,8 +11,8 @@ from flask import Blueprint, jsonify, request, url_for, redirect
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app import db, logger
-from database_models import User, Workout, WorkoutExercise
+from backend.app import db, logger
+from backend.database_models import User, Workout, WorkoutExercise
 from flask import g
 
 

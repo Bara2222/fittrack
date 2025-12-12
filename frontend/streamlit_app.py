@@ -32,9 +32,9 @@ st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 def show_loading(text="Načítám..."):
     """Show loading spinner with text"""
     st.markdown(f"""
-    <div style="text-align: center; padding: 2rem;">
+    <div class="loading-container">
         <div class="loading-spinner"></div>
-        <p style="color: var(--muted); margin-top: 1rem;">{text}</p>
+        <p class="loading-text">{text}</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -52,24 +52,47 @@ def show_toast(message, toast_type="success"):
         }}, 3000);
     </script>
     """, unsafe_allow_html=True)
+
+
+def confirm_dialog(title, message, confirm_key):
+    """Show confirmation dialog"""
+    if f'confirm_{confirm_key}' not in st.session_state:
+        st.session_state[f'confirm_{confirm_key}'] = False
     
-    plate_html = '<div class="plate-visual">'
+    if not st.session_state[f'confirm_{confirm_key}']:
+        st.warning(f"⚠️ **{title}**")
+        st.write(message)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Ano, pokračovat", key=f"yes_{confirm_key}", use_container_width=True):
+                st.session_state[f'confirm_{confirm_key}'] = True
+                st.rerun()
+        with col2:
+            if st.button("❌ Zrušit", key=f"no_{confirm_key}", use_container_width=True):
+                st.session_state[f'confirm_{confirm_key}'] = False
+                return False
+        return False
+    else:
+        # Reset confirmation after action
+        st.session_state[f'confirm_{confirm_key}'] = False
+        return True
+
+
+def show_empty_state(icon, title, message, button_text=None, button_action=None):
+    """Show empty state with optional action button"""
+    st.markdown(f"""
+    <div class="empty-state">
+        <div class="empty-state-icon">{icon}</div>
+        <div class="empty-state-title">{title}</div>
+        <div class="empty-state-text">{message}</div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Left side plates
-    for plate in reversed(plates):
-        plate_class = f"plate-{str(plate).replace('.', '_')}"
-        plate_html += f'<div class="plate {plate_class}">{plate}</div>'
-    
-    # Barbell
-    plate_html += '<div class="barbell"></div>'
-    
-    # Right side plates (mirror)
-    for plate in plates:
-        plate_class = f"plate-{str(plate).replace('.', '_')}"
-        plate_html += f'<div class="plate {plate_class}">{plate}</div>'
-    
-    plate_html += '</div>'
-    return plate_html
+    if button_text and button_action:
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button(button_text, use_container_width=True, type="primary"):
+                button_action()
 
 
 def render_app_header():
@@ -236,8 +259,8 @@ def _safe_json(resp, default=None):
     return default if default is not None else {}
 
 
-def _display_api_error(resp):
-    """Centralized display for API errors: prefer server message and request id if provided."""
+def _display_api_error(resp, context=""):
+    """Enhanced centralized display for API errors with retry option."""
     try:
         payload = resp.json()
     except Exception:
@@ -246,14 +269,26 @@ def _display_api_error(resp):
     if payload and isinstance(payload, dict):
         msg = payload.get('error') or payload.get('message')
         rid = payload.get('request_id') or resp.headers.get('X-Request-ID')
-        if msg:
-            if rid:
-                st.error(f"{msg} (ID: {rid})")
-                # Provide copy info without button in form context
-                st.code(f"ID chyby: {rid}", language="text")
-            else:
-                st.error(msg)
-            return
+        
+        # Create error message with context
+        full_message = f"**Chyba{' při ' + context if context else ''}:**\n\n{msg}"
+        
+        if rid:
+            st.error(full_message)
+            with st.expander("ℹ️ Technické informace"):
+                st.code(f"ID chyby: {rid}\nHTTP Status: {resp.status_code}", language="text")
+                st.write("Pokud problém přetrvává, kontaktujte podporu s tímto ID.")
+        else:
+            st.error(full_message)
+        
+        # Add retry suggestion for certain errors
+        if resp.status_code >= 500:
+            st.info("💡 Server má dočasné problémy. Zkuste to prosím za chvíli.")
+        elif resp.status_code == 401:
+            st.warning("🔐 Vaše relace vypršela. Přihlaste se prosím znovu.")
+        elif resp.status_code == 403:
+            st.warning("🚫 Nemáte oprávnění k této akci.")
+        return
 
     # Fallback to raw text
     text = ''
@@ -1391,28 +1426,121 @@ def workouts_page():
     workouts = r.json().get('workouts', [])
     
     if not workouts:
-        st.info("Zatím nemáte žádné tréninky")
+        def go_to_new_workout():
+            st.session_state['page'] = 'new_workout'
+            st.rerun()
+        
+        show_empty_state(
+            "💪",
+            "Žádné tréninky",
+            "Zatím nemáte žádné zaznamenané tréninky. Začněte svou fitness cestu!",
+            "➕ Vytvořit první trénink",
+            go_to_new_workout
+        )
         return
+    
+    # Search and filtering options
+    st.markdown("### 🔍 Vyhledávání a řazení")
+    
+    # Search bar
+    search_query = st.text_input(
+        "Hledat trénink...",
+        placeholder="Vyhledat podle data nebo poznámky",
+        help="Zadejte datum (např. 2024-12) nebo text z poznámky"
+    )
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        sort_by = st.selectbox(
+            "Řadit podle:",
+            ["Nejnovější první", "Nejstarší první", "Nejvíce cviků", "Nejméně cviků"],
+            key="sort_workouts"
+        )
+    with col2:
+        st.markdown(f"**Nalezeno:** {len(workouts)} tréninků")
+    
+    st.markdown("---")
     
     # Create DataFrame for display
     df_data = []
     for w in workouts:
         df_data.append({
             'Datum': w['date'],
-            'Poznámka': w.get('note', '')[:50] + ('...' if len(w.get('note', '')) > 50 else ''),
+            'Poznámka': w.get('note', ''),
+            'Poznámka_short': w.get('note', '')[:50] + ('...' if len(w.get('note', '')) > 50 else ''),
             'Počet cviků': w['exercise_count'],
             'ID': w['id']
         })
     
     df = pd.DataFrame(df_data)
     
+    # Filter based on search query
+    if search_query:
+        search_lower = search_query.lower()
+        mask = (
+            df['Datum'].str.contains(search_lower, case=False, na=False) |
+            df['Poznámka'].str.contains(search_lower, case=False, na=False)
+        )
+        df = df[mask]
+        
+        # Update count
+        col1, col2 = st.columns([2, 1])
+        with col2:
+            st.markdown(f"**Nalezeno:** {len(df)} z {len(workouts)} tréninků")
+        
+        if len(df) == 0:
+            show_empty_state(
+                "🔍",
+                "Nenalezeny žádné výsledky",
+                f"Pro dotaz '{search_query}' nebyly nalezeny žádné tréninky.",
+                None,
+                None
+            )
+            return
+    
+    # Sort workouts based on selection
+    if sort_by == "Nejnovější první":
+        df = df.sort_values('Datum', ascending=False)
+    elif sort_by == "Nejstarší první":
+        df = df.sort_values('Datum', ascending=True)
+    elif sort_by == "Nejvíce cviků":
+        df = df.sort_values('Počet cviků', ascending=False)
+    elif sort_by == "Nejméně cviků":
+        df = df.sort_values('Počet cviků', ascending=True)
+    
+    # Pagination
+    items_per_page = 10
+    total_pages = (len(df) + items_per_page - 1) // items_per_page
+    
+    if 'workout_page' not in st.session_state:
+        st.session_state['workout_page'] = 1
+    
+    if total_pages > 1:
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col1:
+            if st.button("⬅️ Předchozí", disabled=(st.session_state['workout_page'] == 1)):
+                st.session_state['workout_page'] -= 1
+                st.rerun()
+        with col2:
+            st.markdown(f"<div style='text-align: center; padding: 10px;'>Stránka **{st.session_state['workout_page']}** z **{total_pages}**</div>", unsafe_allow_html=True)
+        with col3:
+            if st.button("Další ➡️", disabled=(st.session_state['workout_page'] == total_pages)):
+                st.session_state['workout_page'] += 1
+                st.rerun()
+        st.markdown("---")
+    
+    # Get current page items
+    start_idx = (st.session_state['workout_page'] - 1) * items_per_page
+    end_idx = start_idx + items_per_page
+    df_page = df.iloc[start_idx:end_idx]
+    
     # Display workouts
-    for idx, row in df.iterrows():
+    for idx, row in df_page.iterrows():
         col1, col2, col3, col4 = st.columns([2, 4, 2, 2])
         with col1:
             st.write(f"**{row['Datum']}**")
         with col2:
-            st.write(row['Poznámka'])
+            st.write(row['Poznámka_short'])
         with col3:
             st.write(f"🏋️ {row['Počet cviků']} cviků")
         with col4:
@@ -1471,17 +1599,32 @@ def workout_detail_page():
                 st.rerun()
     with col3:
         if st.button("🗑️ Smazat trénink", use_container_width=True):
-            r = session.delete(f"{API_BASE}/workouts/{wid}", timeout=5)
-            if r.ok:
-                show_toast("Trénink smazán!")
-                st.session_state['page'] = 'workouts'
-                st.rerun()
+            # Show confirmation dialog
+            if confirm_dialog(
+                "Smazat trénink?", 
+                f"Opravdu chcete smazat tento trénink? Tato akce je nevratná!",
+                f"delete_workout_{wid}"
+            ):
+                r = session.delete(f"{API_BASE}/workouts/{wid}", timeout=5)
+                if r.ok:
+                    show_toast("Trénink smazán!", "success")
+                    st.session_state['page'] = 'workouts'
+                    st.rerun()
+                else:
+                    show_toast("Nepodařilo se smazat trénink", "error")
     
     st.write(f"**Poznámka:** {workout.get('note', 'Bez poznámky')}")
     
     # REST Timer section
     st.markdown("---")
     st.subheader("⏱️ REST Timer")
+    
+    # Initialize timer state
+    if 'timer_running' not in st.session_state:
+        st.session_state['timer_running'] = False
+    if 'timer_end_time' not in st.session_state:
+        st.session_state['timer_end_time'] = None
+    
     col1, col2, col3 = st.columns([1, 1, 2])
     
     with col1:
@@ -1489,11 +1632,44 @@ def workout_detail_page():
     with col2:
         rest_seconds = st.selectbox("Sekundy", range(0, 60, 15), index=0, key="rest_sec")
     with col3:
-        if st.button("▶️ Start REST Timer", use_container_width=True):
+        if st.button("▶️ Spustit Timer", use_container_width=True):
             total_seconds = rest_minutes * 60 + rest_seconds
             if total_seconds > 0:
-                st.info(f"⏰ REST Timer nastaven na {rest_minutes}:{rest_seconds:02d}")
-                show_toast(f"REST Timer: {rest_minutes}:{rest_seconds:02d}")
+                st.session_state['timer_running'] = True
+                from datetime import datetime, timedelta
+                st.session_state['timer_end_time'] = datetime.now() + timedelta(seconds=total_seconds)
+                st.success(f"✅ Timer spuštěn: {rest_minutes}:{rest_seconds:02d}")
+                st.rerun()
+    
+    # Display timer if running
+    if st.session_state.get('timer_running'):
+        timer_placeholder = st.empty()
+        from datetime import datetime
+        import time
+        
+        while st.session_state['timer_running']:
+            now = datetime.now()
+            remaining = (st.session_state['timer_end_time'] - now).total_seconds()
+            
+            if remaining <= 0:
+                timer_placeholder.success("✅ Odpočinek dokončen! Pokračujte s dalším cvičením.")
+                st.session_state['timer_running'] = False
+                st.balloons()
+                break
+            
+            mins = int(remaining // 60)
+            secs = int(remaining % 60)
+            timer_placeholder.markdown(f"""
+            <div style='text-align: center; padding: 20px; background: rgba(255,215,0,0.1); border-radius: 12px; border: 2px solid #ffd700;'>
+                <div style='font-size: 48px; font-weight: 800; color: #ffd700;'>
+                    {mins:02d}:{secs:02d}
+                </div>
+                <div style='font-size: 14px; color: #888; margin-top: 8px;'>Zbývající čas</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            time.sleep(0.5)
+            st.rerun()
     
     st.markdown("---")
     
@@ -1514,13 +1690,26 @@ def workout_detail_page():
                 st.write(f"{ex.get('weight', '-')} kg")
             with col5:
                 if st.button("❌", key=f"del_ex_{ex['id']}"):
-                    r = session.delete(f"{API_BASE}/exercises/{ex['id']}", timeout=5)
-                    if r.ok:
-                        st.success("Cvik smazán!")
-                        st.rerun()
+                    if confirm_dialog(
+                        "Smazat cvik?",
+                        f"Opravdu chcete smazat cvik '{ex['name']}'?",
+                        f"delete_exercise_{ex['id']}"
+                    ):
+                        r = session.delete(f"{API_BASE}/exercises/{ex['id']}", timeout=5)
+                        if r.ok:
+                            show_toast("Cvik smazán!", "success")
+                            st.rerun()
+                        else:
+                            show_toast("Nepodařilo se smazat cvik", "error")
             st.markdown("---")
     else:
-        st.info("Žádné cviky zatím nebyly přidány")
+        show_empty_state(
+            "🏋️",
+            "Žádné cviky",
+            "Tento trénink zatím neobsahuje žádné cviky. Přidejte první cvik níže!",
+            None,
+            None
+        )
     
     # Add exercise form
     st.subheader("➕ Přidat cvik")
@@ -1639,14 +1828,39 @@ def new_workout_page():
 def catalog_page():
     st.markdown('<div class="main-header">📚 Katalog cviků</div>', unsafe_allow_html=True)
     
+    # Loading state
+    catalog_placeholder = st.empty()
+    with catalog_placeholder.container():
+        show_loading("Načítám katalog cviků...")
+    
     r = session.get(f"{API_BASE}/catalog", timeout=5)
+    catalog_placeholder.empty()
+    
     if not r.ok:
         st.error("Nepodařilo se načíst katalog")
         return
     
     catalog = _safe_json(r).get('exercises', [])
     
-    st.write("Základní cviky pro inspiraci:")
+    # Search and filter section
+    st.markdown("### 🔍 Vyhledávání")
+    search_col1, search_col2 = st.columns([3, 1])
+    with search_col1:
+        search_query = st.text_input("Hledat cvik...", placeholder="Zadejte název cviku", label_visibility="collapsed")
+    with search_col2:
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        show_all = st.checkbox("Zobrazit vše", value=True)
+    
+    # Filter catalog based on search
+    filtered_catalog = catalog
+    if search_query and not show_all:
+        filtered_catalog = [ex for ex in catalog if search_query.lower() in ex.lower()]
+    
+    # Display count
+    st.markdown(f"**Nalezeno {len(filtered_catalog)} cviků** z celkem {len(catalog)}")
+    
+    st.markdown("---")
+    
     # Load user's workouts so they can choose where to add exercises
     wr = session.get(f"{API_BASE}/workouts", timeout=5)
     workouts = []
@@ -1665,8 +1879,8 @@ def catalog_page():
     target_options = [create_new_label] + list(workout_map.keys())
     selected_target = st.selectbox('Vyberte trénink, do kterého přidat cviky:', target_options)
 
-    # Multi-select for catalog
-    chosen = st.multiselect('Vyberte cviky (můžete vybrat více):', catalog)
+    # Multi-select for catalog (use filtered list)
+    chosen = st.multiselect('Vyberte cviky (můžete vybrat více):', filtered_catalog)
 
     col1, col2 = st.columns([1, 1])
     with col1:
@@ -2119,13 +2333,13 @@ with st.sidebar:
     
     pages = {
         'dashboard': '📊 Přehled',
-    'stats': '📈 Statistiky',
+        'stats': '📈 Statistiky',
         'workouts': '💪 Moje tréninky',
+        'catalog': '📚 Katalog cviků',
         'new_workout': '➕ Nový trénink',
         'achievements': '🏆 Úspěchy',
         'tools': '⚙️ Nástroje',
         'pwa_setup': '📱 Mobilní aplikace',
-        'catalog': '📚 Katalog cviků',
         'export': '📥 Export',
     }
     
