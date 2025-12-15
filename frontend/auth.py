@@ -22,7 +22,7 @@ def _safe_json(resp, default=None):
 
 
 def _display_api_error(resp):
-    """Centralized display for API errors: prefer server message and request id if provided."""
+    """Centralized display for API errors without request IDs."""
     try:
         payload = resp.json()
     except Exception:
@@ -30,14 +30,8 @@ def _display_api_error(resp):
 
     if payload and isinstance(payload, dict):
         msg = payload.get('error') or payload.get('message')
-        rid = payload.get('request_id') or resp.headers.get('X-Request-ID')
         if msg:
-            if rid:
-                st.error(f"{msg} (ID: {rid})")
-                # Provide copy info without button in form context
-                st.code(f"ID chyby: {rid}", language="text")
-            else:
-                st.error(msg)
+            st.error(msg)
             return
 
     # Fallback to raw text
@@ -49,7 +43,7 @@ def _display_api_error(resp):
     if text:
         st.error(text)
     else:
-        st.error('Neznámá chyba serveru')
+        st.error('Neznámá chyba')
 
 
 def _password_strength(pw: str):
@@ -183,104 +177,126 @@ def login_page():
     """Handle login and registration forms."""
     session = st.session_state['session']
     
-    st.markdown('<div class="main-header">🔐 Přihlášení / Registrace</div>', unsafe_allow_html=True)
-
     # Toggle back to landing page
     if st.button("← Zpět na hlavní stránku"):
         st.session_state['show_login_form'] = False
+        st.session_state['show_register_form'] = False
         st.rerun()
 
-    # Use st.tabs for switching between login/register
-    default_tab = st.session_state.get('default_tab', 'Přihlášení')
-    tabs = st.tabs(["Přihlášení", "Registrace"])
+    # Determine which form to show
+    show_register = st.session_state.get('show_register_form', False)
     
-    with tabs[0 if default_tab == 'Přihlášení' else 1]:
-        if default_tab == 'Přihlášení':
-            st.subheader('Přihlášení')
+    if not show_register:
+        # LOGIN FORM
+        st.markdown('<div class="main-header">🔐 Přihlášení</div>', unsafe_allow_html=True)
+        
+        with st.form('login_form'):
+            username = st.text_input('Uživatelské jméno nebo email')
+            password = st.text_input('Heslo', type='password')
+            submitted = st.form_submit_button('Přihlásit se', use_container_width=True)
             
-            with st.form('login_form'):
-                username = st.text_input('Uživatelské jméno nebo email')
-                password = st.text_input('Heslo', type='password')
-                submitted = st.form_submit_button('Přihlásit se')
-                
-                if submitted:
-                    if not username or not password:
-                        st.error('Vyplňte všechna pole')
-                    else:
-                        try:
-                            r = session.post(f"{API_BASE}/login", 
-                                           json={'username': username, 'password': password}, 
-                                           timeout=5)
-                            if r.ok:
-                                st.session_state['logged_in'] = True
-                                user_data = _safe_json(r)
-                                st.session_state['user'] = user_data.get('user', {})
-                                st.success('Úspěšně přihlášen!')
-                                st.rerun()
-                            else:
-                                _display_api_error(r)
-                        except Exception as e:
-                            st.error('Nepodařilo se připojit k serveru')
+            if submitted:
+                if not username or not password:
+                    st.error('Vyplňte všechna pole')
+                else:
+                    try:
+                        r = session.post(f"{API_BASE}/login", 
+                                       json={'username': username, 'password': password}, 
+                                       timeout=5)
+                        if r.ok:
+                            st.session_state['logged_in'] = True
+                            user_data = _safe_json(r)
+                            st.session_state['user'] = user_data.get('user', {})
+                            st.success('Úspěšně přihlášen!')
+                            st.rerun()
+                        else:
+                            _display_api_error(r)
+                    except Exception as e:
+                        st.error('Nepodařilo se připojit k serveru')
 
-            st.markdown("---")
-            # Google OAuth
-            oauth_url = f"{API_BASE.replace('/api', '')}/auth/google"
-            if st.button("🌐 Přihlásit se přes Google", use_container_width=True):
-                st.markdown(f'<meta http-equiv="refresh" content="0; url={oauth_url}">', 
-                          unsafe_allow_html=True)
-
-    with tabs[1 if default_tab == 'Registrace' else 0]:
-        if default_tab == 'Registrace' or tabs[1]:
-            st.subheader('Registrace')
+        st.markdown("---")
+        # Google OAuth
+        oauth_url = f"{API_BASE.replace('/api', '')}/auth/google"
+        if st.button("🌐 Přihlásit se přes Google", use_container_width=True):
+            st.markdown(f'<meta http-equiv="refresh" content="0; url={oauth_url}">', 
+                      unsafe_allow_html=True)
+        
+        # Link to registration
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='text-align: center; padding: 20px; background: #0a0a0a; border-radius: 12px; margin-top: 20px;'>
+            <p style='color: #cccccc; margin-bottom: 10px;'>Nemáte ještě účet?</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("📝 Registrujte se", use_container_width=True, type="primary"):
+                st.session_state['show_register_form'] = True
+                st.rerun()
+    
+    else:
+        # REGISTRATION FORM
+        st.markdown('<div class="main-header">📝 Registrace</div>', unsafe_allow_html=True)
+        
+        with st.form('register_form'):
+            username = st.text_input('Uživatelské jméno')
+            email = st.text_input('Email')
+            password = st.text_input('Heslo', type='password')
             
-            with st.form('register_form'):
-                username = st.text_input('Uživatelské jméno')
-                email = st.text_input('Email')
-                password = st.text_input('Heslo', type='password')
-                
-                # Password strength indicator
-                if password:
-                    score, color, label, width = _password_strength(password)
-                    st.markdown(f"""
-                    <div style='margin: 10px 0;'>
-                        <div style='font-size: 12px; margin-bottom: 5px;'>Síla hesla: <span style='color: {color}; font-weight: bold;'>{label}</span></div>
-                        <div style='background: #333; border-radius: 10px; height: 8px; overflow: hidden;'>
-                            <div style='background: {color}; height: 100%; width: {width}; transition: all 0.3s;'></div>
-                        </div>
+            # Password strength indicator
+            if password:
+                score, color, label, width = _password_strength(password)
+                st.markdown(f"""
+                <div style='margin: 10px 0;'>
+                    <div style='font-size: 12px; margin-bottom: 5px;'>Síla hesla: <span style='color: {color}; font-weight: bold;'>{label}</span></div>
+                    <div style='background: #333; border-radius: 10px; height: 8px; overflow: hidden;'>
+                        <div style='background: {color}; height: 100%; width: {width}; transition: all 0.3s;'></div>
                     </div>
-                    """, unsafe_allow_html=True)
+                </div>
+                """, unsafe_allow_html=True)
 
-                password2 = st.text_input('Potvrzení hesla', type='password')
-                submitted = st.form_submit_button('Registrovat se')
-                
-                if submitted:
-                    if not all([username, email, password, password2]):
-                        st.error('Vyplňte všechna pole')
-                    elif password != password2:
-                        st.error('Hesla se neshodují')
-                    elif len(password) < 8:
-                        st.error('Heslo musí mít alespoň 8 znaků')
-                    else:
-                        try:
-                            r = session.post(f"{API_BASE}/register", 
-                                           json={
-                                               'username': username, 
-                                               'email': email, 
-                                               'password': password
-                                           }, 
-                                           timeout=5)
-                            if r.ok:
-                                st.success('Registrace úspěšná! Nyní se můžete přihlásit.')
-                                st.session_state['default_tab'] = 'Přihlášení'
-                                st.rerun()
-                            else:
-                                _display_api_error(r)
-                        except Exception as e:
-                            st.error('Nepodařilo se připojit k serveru')
-
-    # Reset default tab after rendering
-    if 'default_tab' in st.session_state:
-        del st.session_state['default_tab']
+            password2 = st.text_input('Potvrzení hesla', type='password')
+            submitted = st.form_submit_button('Registrovat se', use_container_width=True)
+            
+            if submitted:
+                if not all([username, email, password, password2]):
+                    st.error('Vyplňte všechna pole')
+                elif password != password2:
+                    st.error('Hesla se neshodují')
+                elif len(password) < 8:
+                    st.error('Heslo musí mít alespoň 8 znaků')
+                else:
+                    try:
+                        r = session.post(f"{API_BASE}/register", 
+                                       json={
+                                           'username': username, 
+                                           'email': email, 
+                                           'password': password
+                                       }, 
+                                       timeout=5)
+                        if r.ok:
+                            st.success('Registrace úspěšná! Nyní se můžete přihlásit.')
+                            st.session_state['show_register_form'] = False
+                            st.rerun()
+                        else:
+                            _display_api_error(r)
+                    except Exception as e:
+                        st.error('Nepodařilo se připojit k serveru')
+        
+        # Link to login
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='text-align: center; padding: 20px; background: #0a0a0a; border-radius: 12px; margin-top: 20px;'>
+            <p style='color: #cccccc; margin-bottom: 10px;'>Už máte účet?</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🔐 Přihlásit se", use_container_width=True, type="primary"):
+                st.session_state['show_register_form'] = False
+                st.rerun()
 
 
 def logout():

@@ -21,181 +21,162 @@ API_BASE = get_api_base()
 # Global CSS Styles
 GLOBAL_CSS = r"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-html, body, [class*='css'] { font-family: 'Poppins', sans-serif; color:#1a1a1a; background:var(--bg) !important }
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 
-/* Reset all button base styles */
+/* Theme variables - Black & Yellow Design */
+:root{
+    --bg: #000000;           
+    --surface: #0a0a0a;      
+    --primary: #ffd700;      
+    --secondary: #ffffff;    
+    --accent: #ffed4e;       
+    --muted: #999999;        
+    --success: #4ade80;
+    --danger: #ef4444;
+    --border: #ffd700;       
+    --text-primary: #ffffff; 
+    --text-secondary: #000000;
+}
+
+/* Global styles */
+html, body, [class*='css'] { 
+    font-family: 'Poppins', sans-serif !important; 
+    color: var(--text-primary) !important; 
+    background: var(--bg) !important;
+}
+
+/* Hide Streamlit elements */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Container */
+.block-container{
+    max-width: 1400px !important; 
+    margin: 0 auto !important; 
+    padding: 3rem 2rem !important; 
+    background: var(--bg) !important;
+}
+
+/* Reset button styles */
 .stButton > button {
-    min-height: 44px !important;
-    padding: 10px 24px !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    line-height: 1.4 !important;
-    border-radius: 10px !important;
+    min-height: 48px !important;
+    padding: 12px 32px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+    border-radius: 12px !important;
     transition: all 0.3s ease !important;
-    white-space: normal !important;
+    white-space: nowrap !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    word-wrap: break-word !important;
-    overflow: visible !important;
-    box-sizing: border-box !important;
 }
 
-/* Ensure button text is visible and properly sized */
 .stButton > button span,
 .stButton > button p {
     color: inherit !important;
     font-size: inherit !important;
     font-weight: inherit !important;
-    line-height: inherit !important;
 }
 
-/* Theme variables - Black & Yellow */
-:root{
-    --bg: #000000;           /* pure black background */
-    --surface: #1c1c1c;      /* dark surface with slight lift */
-    --primary: #ffd700;      /* vibrant gold/yellow */
-    --secondary: #ffffff;    /* white for text */
-    --accent: #ffed4e;       /* lighter yellow accent */
-    --muted: #b8b8b8;        /* lighter gray for better readability */
-    --success: #4ade80;
-    --danger: #ef4444;
-    --border: #ffd700;       /* yellow borders */
-    --text-primary: #ffffff; /* primary white text */
-    --text-secondary: #000000; /* black text for yellow backgrounds */
+/* Headers with glow effect */
+h1, h2, h3, .main-header {
+    color: var(--text-primary) !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+    text-shadow: 0 0 20px rgba(255,215,0,0.6),
+                 0 0 40px rgba(255,215,0,0.4),
+                 0 0 60px rgba(255,215,0,0.2) !important;
+    letter-spacing: 0.5px !important;
 }
 
-/* Responsive Container */
-.block-container{
-    max-width:1200px; 
-    margin:0 auto; 
-    padding:2rem 1.5rem; 
-    background:var(--bg);
-    position: relative;
-}
-
-/* Mobile-First Responsive Grid */
-@media (max-width: 640px) {
-    .block-container { padding: 0.5rem; }
-    .main-header { font-size: 22px; padding: 12px 16px; }
-    .stat-number { font-size: 36px; }
-    .stat-label { font-size: 12px; }
-    .card { padding: 16px; border-radius: 12px; margin-bottom: 12px; }
-    .stTabs [data-baseweb="tab"] { padding: 8px 12px; font-size: 12px; }
-    .stButton>button { min-height: 50px !important; font-size: 15px !important; padding: 12px 20px !important; }
-    .empty-state { padding: 2rem 1rem; }
-    .empty-state-icon { font-size: 3rem; }
-    .loading-container { padding: 2rem 1rem; }
-}
-@media (max-width: 768px) {
-    .block-container { padding: 1rem 0.75rem; }
-    .main-header { font-size: 26px; padding: 14px 18px; }
-    .stat-number { font-size: 44px; }
-    .card { padding: 24px; border-radius: 18px; }
-    .stButton>button { min-height: 48px !important; }
-}
-@media (max-width: 1024px) {
-    .block-container { max-width: 100%; padding: 1.25rem; }
-    .main-header { font-size: 30px; }
-}
-
-/* Touch-friendly elements */
-@media (hover: none) and (pointer: coarse) {
-    .stButton>button { min-height: 52px !important; font-size: 16px !important; }
-    .card { margin-bottom: 16px; }
-    .stTextInput>div>div>input { min-height: 52px !important; font-size: 16px !important; }
-    .stSelectbox>div>div>div { min-height: 52px !important; }
-    .stNumberInput>div>div>input { min-height: 52px !important; }
-    /* Prevent zoom on input focus on iOS */
-    input, select, textarea { font-size: 16px !important; }
-}
-.block-container::before{
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,215,0,0.03) 50px, rgba(255,215,0,0.03) 51px),
-        repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255,215,0,0.03) 50px, rgba(255,215,0,0.03) 51px);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* Main header */
 .main-header{
-    font-size:36px; 
-    font-weight:800; 
-    color:var(--text-secondary); 
-    background: linear-gradient(135deg, var(--primary), var(--accent)); 
-    padding:24px 36px; 
-    border-radius:18px; 
-    text-align:center; 
-    margin-bottom:32px; 
-    box-shadow: 0 12px 36px rgba(255,215,0,0.4), 
-                0 0 60px rgba(255,215,0,0.3); 
-    text-shadow: none;
-    position: relative;
-    overflow: hidden;
-    border: 2px solid rgba(255,215,0,0.6);
-}
-.main-header::before{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: shine 3s infinite;
-}
-@keyframes shine {
-    0% { left: -100%; }
-    50% { left: 100%; }
-    100% { left: 100%; }
-}
-
-.main-sub{
-    font-size:18px; 
-    font-weight:600; 
-    opacity:0.8; 
-    margin-left:16px;
-}
-
-/* Primary buttons - default styling */
-.stButton > button[kind="primary"],
-.stButton > button[data-testid="baseButton-primary"] {
-    background: linear-gradient(135deg, #ffd700, #ffed4e) !important;
-    color: #000000 !important;
-    border: 2px solid #ffd700 !important;
-    box-shadow: 0 4px 12px rgba(255,215,0,0.3) !important;
-}
-
-.stButton > button[kind="primary"]:hover,
-.stButton > button[data-testid="baseButton-primary"]:hover {
-    background: linear-gradient(135deg, #ffed4e, #fff44d) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 16px rgba(255,215,0,0.5) !important;
-}
-
-/* Secondary buttons */
-.stButton > button[kind="secondary"],
-.stButton > button[data-testid="baseButton-secondary"] {
+    font-size: 48px !important; 
+    font-weight: 900 !important; 
+    margin-bottom: 16px !important;
+    padding: 0 !important;
     background: transparent !important;
-    color: #ffd700 !important;
-    border: 2px solid #ffd700 !important;
-    box-shadow: 0 2px 8px rgba(255,215,0,0.2) !important;
 }
 
-.stButton > button[kind="secondary"]:hover,
-.stButton > button[data-testid="baseButton-secondary"]:hover {
-    background: rgba(255,215,0,0.1) !important;
-    border-color: #ffed4e !important;
+.hero-subtitle {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: var(--muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 3px !important;
+    margin-bottom: 24px !important;
+    text-shadow: none !important;
+}
+
+.hero-description {
+    font-size: 18px !important;
+    color: rgba(255,255,255,0.85) !important;
+    line-height: 1.8 !important;
+    max-width: 900px !important;
+    margin: 0 auto 48px !important;
+    text-shadow: none !important;
+}
+
+/* Primary yellow buttons */
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="baseButton-primary"],
+.stButton > button {
+    background: var(--primary) !important;
+    color: var(--text-secondary) !important;
+    border: none !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 16px rgba(255,215,0,0.4) !important;
+}
+
+.stButton > button:hover {
+    background: var(--accent) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(255,215,0,0.3) !important;
+    box-shadow: 0 8px 24px rgba(255,215,0,0.6) !important;
+}
+
+/* Feature cards with yellow borders */
+.card, .feature-card {
+    background: var(--bg) !important;
+    border: 3px solid var(--primary) !important;
+    border-radius: 16px !important;
+    padding: 48px 32px !important;
+    margin-bottom: 24px !important;
+    transition: all 0.3s ease !important;
+    min-height: 320px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+}
+
+.card:hover, .feature-card:hover {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 30px rgba(255,215,0,0.3) !important;
+    transform: translateY(-4px) !important;
+}
+
+.card-icon {
+    font-size: 64px !important;
+    margin-bottom: 24px !important;
+}
+
+.card-title {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    margin-bottom: 16px !important;
+    border-left: 4px solid var(--primary) !important;
+    padding-left: 16px !important;
+    text-align: left !important;
+    width: 100% !important;
+}
+
+.card-description {
+    font-size: 15px !important;
+    color: var(--muted) !important;
+    line-height: 1.7 !important;
 }
 
 /* Tertiary/default buttons */
@@ -817,3 +798,71 @@ AVAILABLE_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25]
 
 # Default barbell weight
 DEFAULT_BARBELL_WEIGHT = 20
+
+# Exercise Catalog
+EXERCISE_CATALOG = {
+    'Hrudník': [
+        {'name': 'Bench Press', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Incline Bench Press', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Decline Bench Press', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Dumbbell Press', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Incline Dumbbell Press', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Cable Fly', 'equipment': 'Cable', 'difficulty': 'Beginner'},
+        {'name': 'Push-ups', 'equipment': 'Bodyweight', 'difficulty': 'Beginner'},
+        {'name': 'Dips', 'equipment': 'Bodyweight', 'difficulty': 'Intermediate'},
+    ],
+    'Záda': [
+        {'name': 'Pull-ups', 'equipment': 'Bodyweight', 'difficulty': 'Intermediate'},
+        {'name': 'Chin-ups', 'equipment': 'Bodyweight', 'difficulty': 'Intermediate'},
+        {'name': 'Barbell Rows', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'T-Bar Rows', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Dumbbell Rows', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Lat Pulldown', 'equipment': 'Cable', 'difficulty': 'Beginner'},
+        {'name': 'Cable Rows', 'equipment': 'Cable', 'difficulty': 'Beginner'},
+        {'name': 'Deadlifts', 'equipment': 'Barbell', 'difficulty': 'Advanced'},
+    ],
+    'Nohy': [
+        {'name': 'Squats', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Front Squats', 'equipment': 'Barbell', 'difficulty': 'Advanced'},
+        {'name': 'Leg Press', 'equipment': 'Machine', 'difficulty': 'Beginner'},
+        {'name': 'Lunges', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Bulgarian Split Squats', 'equipment': 'Dumbbell', 'difficulty': 'Intermediate'},
+        {'name': 'Leg Curls', 'equipment': 'Machine', 'difficulty': 'Beginner'},
+        {'name': 'Leg Extensions', 'equipment': 'Machine', 'difficulty': 'Beginner'},
+        {'name': 'Calf Raises', 'equipment': 'Machine', 'difficulty': 'Beginner'},
+    ],
+    'Ramena': [
+        {'name': 'Overhead Press', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Dumbbell Shoulder Press', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Lateral Raises', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Front Raises', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Rear Delt Fly', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Face Pulls', 'equipment': 'Cable', 'difficulty': 'Beginner'},
+        {'name': 'Arnold Press', 'equipment': 'Dumbbell', 'difficulty': 'Intermediate'},
+    ],
+    'Biceps': [
+        {'name': 'Barbell Curls', 'equipment': 'Barbell', 'difficulty': 'Beginner'},
+        {'name': 'Dumbbell Curls', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Hammer Curls', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Preacher Curls', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Cable Curls', 'equipment': 'Cable', 'difficulty': 'Beginner'},
+        {'name': 'Concentration Curls', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+    ],
+    'Triceps': [
+        {'name': 'Tricep Dips', 'equipment': 'Bodyweight', 'difficulty': 'Intermediate'},
+        {'name': 'Close-Grip Bench Press', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Skull Crushers', 'equipment': 'Barbell', 'difficulty': 'Intermediate'},
+        {'name': 'Overhead Tricep Extension', 'equipment': 'Dumbbell', 'difficulty': 'Beginner'},
+        {'name': 'Tricep Pushdown', 'equipment': 'Cable', 'difficulty': 'Beginner'},
+        {'name': 'Diamond Push-ups', 'equipment': 'Bodyweight', 'difficulty': 'Intermediate'},
+    ],
+    'Core': [
+        {'name': 'Plank', 'equipment': 'Bodyweight', 'difficulty': 'Beginner'},
+        {'name': 'Side Plank', 'equipment': 'Bodyweight', 'difficulty': 'Beginner'},
+        {'name': 'Crunches', 'equipment': 'Bodyweight', 'difficulty': 'Beginner'},
+        {'name': 'Russian Twists', 'equipment': 'Bodyweight', 'difficulty': 'Beginner'},
+        {'name': 'Hanging Leg Raises', 'equipment': 'Bodyweight', 'difficulty': 'Advanced'},
+        {'name': 'Ab Wheel Rollout', 'equipment': 'Equipment', 'difficulty': 'Advanced'},
+        {'name': 'Cable Crunches', 'equipment': 'Cable', 'difficulty': 'Intermediate'},
+    ]
+}
