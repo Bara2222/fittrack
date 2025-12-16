@@ -11,6 +11,7 @@ from pages_simple import landing_page, catalog_page, export_page
 from pages_dashboard import dashboard_page, stats_page
 from pages_workouts import workouts_page, new_workout_page, workout_detail_page
 from pages_admin import admin_page
+from pages_extra import achievements_page, tools_page, settings_page, workout_plans_page, goals_page
 
 # Page configuration
 st.set_page_config(
@@ -48,11 +49,27 @@ if not check_login():
 else:
     # Logged in - show app content with sidebar and WITHOUT footer
     
+    # Auto-expand sidebar for logged-in users
+    st.markdown("""
+    <script>
+        // Wait for sidebar to be available
+        setTimeout(function() {
+            const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                const collapseButton = sidebar.querySelector('button[kind="header"]');
+                if (collapseButton && sidebar.getAttribute('aria-expanded') === 'false') {
+                    collapseButton.click();
+                }
+            }
+        }, 100);
+    </script>
+    """, unsafe_allow_html=True)
+    
     # Render sidebar navigation
     render_sidebar_navigation()
     
-    # Render header
-    render_app_header()
+    # Render header without login button
+    render_app_header(show_login_button=False)
     
     # Route to appropriate page
     if current_page == 'dashboard':
@@ -69,6 +86,16 @@ else:
         catalog_page()
     elif current_page == 'export':
         export_page()
+    elif current_page == 'achievements':
+        achievements_page()
+    elif current_page == 'tools':
+        tools_page()
+    elif current_page == 'workout_plans':
+        workout_plans_page()
+    elif current_page == 'goals':
+        goals_page()
+    elif current_page == 'settings':
+        settings_page()
     elif current_page == 'admin':
         admin_page()
     else:

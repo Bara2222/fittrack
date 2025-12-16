@@ -15,17 +15,87 @@ def show_loading(text="Načítám..."):
     """, unsafe_allow_html=True)
 
 
-def show_toast(message, toast_type="success"):
-    """Show toast notification"""
-    color = "var(--success)" if toast_type == "success" else "var(--danger)"
+def show_toast(message, toast_type="success", duration=3000):
+    """
+    Show modern toast notification with animation
+    Types: success, error, warning, info
+    """
+    icons = {
+        "success": "✅",
+        "error": "❌",
+        "warning": "⚠️",
+        "info": "ℹ️"
+    }
+    
+    colors = {
+        "success": "#10b981",
+        "error": "#ef4444",
+        "warning": "#f59e0b",
+        "info": "#3b82f6"
+    }
+    
+    icon = icons.get(toast_type, "ℹ️")
+    color = colors.get(toast_type, "#3b82f6")
+    
+    toast_id = f"toast_{toast_type}_{hash(message)}"
+    
     st.markdown(f"""
-    <div class="toast" style="background: {color};">
-        {message}
+    <style>
+    @keyframes slideInRight {{
+        from {{
+            transform: translateX(100%);
+            opacity: 0;
+        }}
+        to {{
+            transform: translateX(0);
+            opacity: 1;
+        }}
+    }}
+    @keyframes slideOutRight {{
+        from {{
+            transform: translateX(0);
+            opacity: 1;
+        }}
+        to {{
+            transform: translateX(100%);
+            opacity: 0;
+        }}
+    }}
+    .toast-notification {{
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: {color};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        animation: slideInRight 0.3s ease-out;
+        min-width: 300px;
+        max-width: 500px;
+    }}
+    .toast-icon {{
+        font-size: 24px;
+    }}
+    </style>
+    <div id="{toast_id}" class="toast-notification">
+        <span class="toast-icon">{icon}</span>
+        <span>{message}</span>
     </div>
     <script>
         setTimeout(() => {{
-            document.querySelector('.toast').remove();
-        }}, 3000);
+            const toast = document.getElementById('{toast_id}');
+            if (toast) {{
+                toast.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }}
+        }}, {duration});
     </script>
     """, unsafe_allow_html=True)
 
@@ -55,8 +125,45 @@ def confirm_dialog(title, message, confirm_key):
 
 
 def show_empty_state(icon, title, message, button_text=None, button_action=None):
-    """Show empty state with optional action button"""
+    """Show modern empty state with illustration"""
     st.markdown(f"""
+    <style>
+    .empty-state {{
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        border-radius: 20px;
+        margin: 40px 0;
+        border: 2px solid #2a2a2a;
+    }}
+    .empty-state-icon {{
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.8;
+        animation: float 3s ease-in-out infinite;
+    }}
+    @keyframes float {{
+        0%, 100% {{ transform: translateY(0px); }}
+        50% {{ transform: translateY(-10px); }}
+    }}
+    .empty-state-title {{
+        font-size: 28px;
+        font-weight: 800;
+        color: #ffd700;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }}
+    .empty-state-text {{
+        font-size: 16px;
+        color: #cccccc;
+        margin-bottom: 30px;
+        line-height: 1.6;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }}
+    </style>
     <div class="empty-state">
         <div class="empty-state-icon">{icon}</div>
         <div class="empty-state-title">{title}</div>
@@ -71,7 +178,65 @@ def show_empty_state(icon, title, message, button_text=None, button_action=None)
                 button_action()
 
 
-def render_app_header(show_time=True):
+def lazy_load_image(image_url, alt_text="", placeholder_height="200px"):
+    """Lazy load images with Intersection Observer"""
+    unique_id = f"img_{hash(image_url)}"
+    st.markdown(f"""
+    <style>
+    .lazy-image-container {{
+        width: 100%;
+        height: {placeholder_height};
+        background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 12px;
+        overflow: hidden;
+    }}
+    @keyframes shimmer {{
+        0% {{ background-position: -200% 0; }}
+        100% {{ background-position: 200% 0; }}
+    }}
+    .lazy-image {{
+        width: 100%;
+        height: auto;
+        opacity: 0;
+        transition: opacity 0.5s ease-in;
+    }}
+    .lazy-image.loaded {{
+        opacity: 1;
+    }}
+    </style>
+    <div class="lazy-image-container" id="container_{unique_id}">
+        <img 
+            data-src="{image_url}" 
+            alt="{alt_text}"
+            class="lazy-image"
+            id="{unique_id}"
+        />
+    </div>
+    <script>
+        const observer = new IntersectionObserver((entries) => {{
+            entries.forEach(entry => {{
+                if (entry.isIntersecting) {{
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.onload = () => {{
+                        img.classList.add('loaded');
+                        img.parentElement.style.height = 'auto';
+                        img.parentElement.style.background = 'none';
+                    }};
+                    observer.unobserve(img);
+                }}
+            }});
+        }}, {{ threshold: 0.1 }});
+        
+        const lazyImage = document.getElementById('{unique_id}');
+        if (lazyImage) observer.observe(lazyImage);
+    </script>
+    """, unsafe_allow_html=True)
+
+
+def render_app_header(show_time=True, show_login_button=True):
     """Render top navigation bar with optional time display and login/user info"""
     from datetime import datetime
     
@@ -94,14 +259,17 @@ def render_app_header(show_time=True):
             user = st.session_state.get('user', {})
             username = user.get('username', 'Uživatel')
             if st.button(f"👤 {username}", use_container_width=True):
-                # Open profile editor directly
-                st.session_state['page'] = 'dashboard'
-                st.session_state['edit_profile'] = True
+                # Open settings page
+                st.session_state['page'] = 'settings'
                 st.rerun()
         else:
-            if st.button("🔐 Přihlásit se", use_container_width=True, type="primary"):
-                st.session_state['show_login_form'] = True
-                st.rerun()
+            # Only show login button if show_login_button is True
+            if show_login_button:
+                if st.button("🔐 Přihlásit se", use_container_width=True, type="primary"):
+                    st.session_state['show_login_form'] = True
+                    st.rerun()
+            else:
+                st.write("")
 
 
 def render_sidebar_navigation():
@@ -135,6 +303,22 @@ def render_sidebar_navigation():
             st.session_state['page'] = 'catalog'
             st.rerun()
         
+        if st.button("📋 Plány tréninků", use_container_width=True, type="primary" if current_page == 'workout_plans' else "secondary"):
+            st.session_state['page'] = 'workout_plans'
+            st.rerun()
+        
+        if st.button("🎯 Cíle", use_container_width=True, type="primary" if current_page == 'goals' else "secondary"):
+            st.session_state['page'] = 'goals'
+            st.rerun()
+        
+        if st.button("🏆 Úspěchy", use_container_width=True, type="primary" if current_page == 'achievements' else "secondary"):
+            st.session_state['page'] = 'achievements'
+            st.rerun()
+        
+        if st.button("⚙️ Nástroje", use_container_width=True, type="primary" if current_page == 'tools' else "secondary"):
+            st.session_state['page'] = 'tools'
+            st.rerun()
+        
         if st.button("📥 Export dat", use_container_width=True, type="primary" if current_page == 'export' else "secondary"):
             st.session_state['page'] = 'export'
             st.rerun()
@@ -154,10 +338,6 @@ def render_sidebar_navigation():
         from auth import logout
         if st.button("🚪 Odhlásit se", use_container_width=True):
             logout()
-        else:
-            if st.button("🔐 Přihlásit se", use_container_width=True, type="primary"):
-                st.session_state['show_login_form'] = True
-                st.rerun()
 
 
 def render_footer():
@@ -200,4 +380,11 @@ def render_footer():
         st.markdown("📋 Obchodní podmínky")
     
     st.markdown("---")
-    st.markdown(f"© {current_year} FitTrack. Všechna práva vyhrazena. | Vytvořeno s ❤️ pro fitness nadšence")
+    st.markdown(f"""
+    <div style="text-align: center; padding: 20px 0; color: #888;">
+        <p style="margin: 5px 0;">© {current_year} FitTrack. Všechna práva vyhrazena.</p>
+        <p style="margin: 5px 0; font-size: 14px;">
+            🎓 Maturitní závěrečná práce | Vytvořeno s ❤️ pro fitness nadšence
+        </p>
+    </div>
+    """, unsafe_allow_html=True)

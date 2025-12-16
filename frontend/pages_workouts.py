@@ -7,8 +7,9 @@ from datetime import date
 import pandas as pd
 
 from config import API_BASE
-from components import show_loading, show_empty_state, confirm_dialog
+from components import show_loading, show_empty_state, confirm_dialog, show_toast
 from auth import _safe_json, _display_api_error
+from cache_utils import get_user_workouts, get_workout_templates, clear_user_cache
 
 
 def workouts_page():
@@ -49,14 +50,10 @@ def workouts_page():
     with workouts_placeholder.container():
         show_loading("Načítám tréninky...")
     
-    r = session.get(f"{API_BASE}/workouts", timeout=5)
+    # Use cached workouts
+    user_id = st.session_state.get('user', {}).get('id')
+    workouts = get_user_workouts(user_id)
     workouts_placeholder.empty()
-    
-    if not r.ok:
-        st.error("❌ Nepodařilo se načíst tréninky")
-        return
-    
-    workouts = r.json().get('workouts', [])
     
     if not workouts:
         def go_to_new_workout():
@@ -225,7 +222,8 @@ def workout_detail_page():
             
             dup_r = session.post(f"{API_BASE}/workouts", json=payload, timeout=5)
             if dup_r.ok:
-                st.success("✅ Trénink duplikován!")
+                clear_user_cache(st.session_state.get('user', {}).get('id'))
+                show_toast("Trénink úspěšně duplikován!", "success")
                 new_id = _safe_json(dup_r).get('id')
                 st.session_state['selected_workout'] = new_id
                 st.rerun()
@@ -238,7 +236,8 @@ def workout_detail_page():
             ):
                 r = session.delete(f"{API_BASE}/workouts/{wid}", timeout=5)
                 if r.ok:
-                    st.success("✅ Trénink smazán!")
+                    clear_user_cache(st.session_state.get('user', {}).get('id'))
+                    show_toast("Trénink úspěšně smazán!", "success")
                     st.session_state['page'] = 'workouts'
                     st.rerun()
     
@@ -269,7 +268,8 @@ def workout_detail_page():
                     ):
                         r = session.delete(f"{API_BASE}/exercises/{ex['id']}", timeout=5)
                         if r.ok:
-                            st.success("✅ Cvik smazán!")
+                            clear_user_cache(st.session_state.get('user', {}).get('id'))
+                            show_toast("Cvik úspěšně smazán!", "success")
                             st.rerun()
             st.markdown("---")
     else:
@@ -301,10 +301,11 @@ def workout_detail_page():
                 }
                 r = session.post(f"{API_BASE}/exercises/{wid}/add", json=payload, timeout=5)
                 if r.ok:
-                    st.success("✅ Cvik přidán!")
+                    clear_user_cache(st.session_state.get('user', {}).get('id'))
+                    show_toast("Cvik úspěšně přidán!", "success")
                     st.rerun()
                 else:
-                    st.error("❌ Chyba při přidávání cviku")
+                    show_toast("Chyba při přidávání cviku", "error")
 
 
 def new_workout_page():
@@ -351,10 +352,10 @@ def new_workout_page():
                         detail = _safe_json(wr).get('workout', {})
                         exercises = [ex['name'] for ex in detail.get('exercises', [])]
                         st.session_state['prefill_exercises'] = exercises
-                        st.success("✅ Poslední trénink načten!")
+                        show_toast("Poslední trénink načten!", "success")
                         st.rerun()
         except Exception:
-            st.error("❌ Nepodařilo se načíst poslední trénink")
+            show_toast("Nepodařilo se načíst poslední trénink", "error")
     
     st.markdown("---")
     
@@ -429,7 +430,8 @@ def new_workout_page():
                     try:
                         r = session.post(f"{API_BASE}/workouts", json=payload, timeout=5)
                         if r.status_code == 201:
-                            st.success("✅ Trénink vytvořen!")
+                            clear_user_cache(st.session_state.get('user', {}).get('id'))
+                            show_toast("Trénink úspěšně vytvořen!", "success")
                             # Clear workout builder after successful creation
                             if 'workout_builder' in st.session_state:
                                 st.session_state['workout_builder'] = []

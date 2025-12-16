@@ -4,8 +4,9 @@ Contains page rendering functions for FitTrack frontend
 """
 import streamlit as st
 from config import API_BASE
-from components import render_app_header, render_footer, show_loading, show_empty_state
+from components import render_app_header, render_footer, show_loading, show_empty_state, lazy_load_image
 from auth import _safe_json, _display_api_error
+from cache_utils import get_exercise_catalog
 
 
 def landing_page():
@@ -23,7 +24,7 @@ def landing_page():
 
     # Hero section
     st.markdown("""
-    <div style="text-align: center; padding: 100px 20px 80px 20px; background: #000000; max-width: 1200px; margin: 0 auto;">
+    <div style="text-align: center; padding: 40px 20px 30px 20px; background: #000000; max-width: 1200px; margin: 0 auto;">
         <div class="hero-subtitle">VÁŠE FITNESS NA PRVNÍM MÍSTĚ</div>
         <h1 class="main-header">FitTrack</h1>
         <div class="hero-description">
@@ -34,7 +35,7 @@ def landing_page():
     """, unsafe_allow_html=True)
 
     # Add spacing
-    st.markdown("<div style='margin: 60px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
 
     # Feature cards - better centered
     col_space1, col1, col2, col3, col_space2 = st.columns([0.5, 1, 1, 1, 0.5])
@@ -73,70 +74,70 @@ def landing_page():
         """, unsafe_allow_html=True)
 
     # Why FitTrack section
-    st.markdown("<div style='margin-top: 60px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
     
     st.markdown("""
     <style>
     .benefit-box {
-        padding: 28px;
+        padding: 20px;
         background: #0a0a0a;
         border-left: 4px solid #ffd700;
         border-radius: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     .benefit-title {
         color: #ffd700;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
     .benefit-desc {
         color: #cccccc;
-        font-size: 15px;
-        line-height: 1.7;
+        font-size: 14px;
+        line-height: 1.6;
     }
     .cta-section {
         text-align: center;
-        padding: 3rem 2rem;
+        padding: 2rem 1.5rem;
         background: #0a0a0a;
         border-radius: 20px;
-        margin: 40px 0;
+        margin: 20px 0;
     }
     .cta-title {
         color: #ffffff;
-        font-size: 2.2rem;
+        font-size: 2rem;
         font-weight: 800;
-        margin-bottom: 0.8rem;
+        margin-bottom: 0.5rem;
     }
     .cta-subtitle {
         color: #cccccc;
-        font-size: 1.2rem;
-        margin-bottom: 2rem;
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
     }
     .stats-row {
         display: flex;
         justify-content: center;
-        gap: 4rem;
-        margin-bottom: 2rem;
+        gap: 3rem;
+        margin-bottom: 1.5rem;
     }
     .stat-item {
         text-align: center;
     }
     .stat-number {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         font-weight: 900;
         color: #ffd700;
-        margin-bottom: 0.3rem;
+        margin-bottom: 0.2rem;
     }
     .stat-label {
         color: #ffffff;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
     </style>
-    <div style='text-align: center; padding: 50px 20px 30px 20px; max-width: 1200px; margin: 0 auto;'>
-        <h2 style='font-size: 36px; font-weight: 800; color: #ffd700; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 1px;'>Proč FitTrack?</h2>
+    <div style='text-align: center; padding: 30px 20px 20px 20px; max-width: 1200px; margin: 0 auto;'>
+        <h2 style='font-size: 32px; font-weight: 800; color: #ffd700; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px;'>Proč FitTrack?</h2>
     </div>
     """, unsafe_allow_html=True)
     
@@ -174,7 +175,7 @@ def landing_page():
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
 
     # Call to action - centered and clean
     st.markdown("""
@@ -207,18 +208,20 @@ def landing_page():
             st.session_state['show_login_form'] = True
             st.rerun()
     
-    st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
     
     render_footer()
     st.stop()
 
 
 def catalog_page():
-    """Exercise catalog page"""
-    from config import EXERCISE_CATALOG
+    """Exercise catalog page with cached data"""
     
     st.markdown('<div class="main-header">📚 Katalog cviků</div>', unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Use cached exercise catalog
+    EXERCISE_CATALOG = get_exercise_catalog()
     
     # Initialize selected exercises in session state
     if 'workout_builder' not in st.session_state:
@@ -244,13 +247,25 @@ def catalog_page():
     # Filter by category
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 🎯 Filtrovat podle svalové skupiny")
-    categories = ['Vše'] + list(set([ex.get('category', 'Ostatní') for ex in EXERCISE_CATALOG]))
+    
+    # Get all categories from EXERCISE_CATALOG dictionary keys
+    categories = ['Vše'] + list(EXERCISE_CATALOG.keys())
     selected_category = st.selectbox("Kategorie", categories, key="catalog_filter")
     
-    # Filter exercises
-    filtered = EXERCISE_CATALOG if selected_category == 'Vše' else [
-        ex for ex in EXERCISE_CATALOG if ex.get('category') == selected_category
-    ]
+    # Filter exercises - flatten the dictionary structure
+    if selected_category == 'Vše':
+        filtered = []
+        for category, exercises in EXERCISE_CATALOG.items():
+            for ex in exercises:
+                ex_copy = ex.copy()
+                ex_copy['category'] = category
+                filtered.append(ex_copy)
+    else:
+        filtered = []
+        for ex in EXERCISE_CATALOG.get(selected_category, []):
+            ex_copy = ex.copy()
+            ex_copy['category'] = selected_category
+            filtered.append(ex_copy)
     
     if not filtered:
         show_empty_state(

@@ -190,10 +190,15 @@ def login_page():
         # LOGIN FORM
         st.markdown('<div class="main-header">🔐 Přihlášení</div>', unsafe_allow_html=True)
         
+        # Show registration success message if coming from successful registration
+        if st.session_state.get('registration_success', False):
+            st.success('✅ Registrace úspěšná! Nyní se můžete přihlásit.')
+            st.session_state['registration_success'] = False
+        
         with st.form('login_form'):
             username = st.text_input('Uživatelské jméno nebo email')
             password = st.text_input('Heslo', type='password')
-            submitted = st.form_submit_button('Přihlásit se', use_container_width=True)
+            submitted = st.form_submit_button('🔐 Přihlásit se', use_container_width=True, type="primary")
             
             if submitted:
                 if not username or not password:
@@ -217,7 +222,7 @@ def login_page():
         st.markdown("---")
         # Google OAuth
         oauth_url = f"{API_BASE.replace('/api', '')}/auth/google"
-        if st.button("🌐 Přihlásit se přes Google", use_container_width=True):
+        if st.button("🌐 Přihlásit se přes Google", use_container_width=True, type="primary"):
             st.markdown(f'<meta http-equiv="refresh" content="0; url={oauth_url}">', 
                       unsafe_allow_html=True)
         
@@ -231,7 +236,7 @@ def login_page():
         
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
-            if st.button("📝 Registrujte se", use_container_width=True, type="primary"):
+            if st.button("📝 Registrovat se", use_container_width=True, type="primary"):
                 st.session_state['show_register_form'] = True
                 st.rerun()
     
@@ -257,7 +262,7 @@ def login_page():
                 """, unsafe_allow_html=True)
 
             password2 = st.text_input('Potvrzení hesla', type='password')
-            submitted = st.form_submit_button('Registrovat se', use_container_width=True)
+            submitted = st.form_submit_button('📝 Registrovat se', use_container_width=True, type="primary")
             
             if submitted:
                 if not all([username, email, password, password2]):
@@ -276,7 +281,7 @@ def login_page():
                                        }, 
                                        timeout=5)
                         if r.ok:
-                            st.success('Registrace úspěšná! Nyní se můžete přihlásit.')
+                            st.session_state['registration_success'] = True
                             st.session_state['show_register_form'] = False
                             st.rerun()
                         else:

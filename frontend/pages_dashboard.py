@@ -11,6 +11,7 @@ from config import API_BASE
 from components import show_loading, show_empty_state, show_toast
 from auth import _safe_json, _display_api_error
 from utils import calculate_1rm
+from cache_utils import get_user_stats, get_user_workouts
 
 
 def dashboard_page():
@@ -19,17 +20,18 @@ def dashboard_page():
     st.markdown("<br>", unsafe_allow_html=True)
     
     session = st.session_state['session']
+    user_id = st.session_state.get('user', {}).get('id')
     
     # Loading state for stats
     stats_placeholder = st.empty()
     with stats_placeholder.container():
         show_loading("Načítám statistiky...")
     
-    r = session.get(f"{API_BASE}/stats", timeout=5)
+    # Use cached stats
+    stats = get_user_stats(user_id)
     stats_placeholder.empty()  # Clear loading
     
-    if r.ok:
-        stats = _safe_json(r).get('stats', {})
+    if stats:
         # Responsive columns with glassmorphism cards
         col1, col2 = st.columns([1, 1])
         with col1:
@@ -209,30 +211,6 @@ def stats_page():
     st.markdown('<div class="main-header">📈 Pokročilé statistiky & analýzy</div>', unsafe_allow_html=True)
     
     session = st.session_state['session']
-    
-    # 1RM Calculator section
-    st.markdown("## 💪 1RM Kalkulátor")
-    st.markdown('<div class="rm-calculator">', unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        rm_weight = st.number_input("Váha (kg)", min_value=1.0, value=100.0, step=2.5, key="rm_weight")
-    with col2:
-        rm_reps = st.number_input("Počet opakování", min_value=1, max_value=20, value=5, key="rm_reps")
-    with col3:
-        if st.button("Vypočítat 1RM", use_container_width=True):
-            one_rm = calculate_1rm(rm_weight, rm_reps)
-            st.markdown(f'<div class="rm-result">{one_rm:.1f} kg</div>', unsafe_allow_html=True)
-            
-            # Show percentage recommendations
-            st.markdown("**Doporučené zatížení:**")
-            percentages = [(50, "Zahřívání"), (70, "Objemový"), (85, "Silový"), (95, "Maximální")]
-            for pct, desc in percentages:
-                weight = one_rm * (pct / 100)
-                st.write(f"• {pct}%: {weight:.1f} kg ({desc})")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown("---")
 
     # Loading state for data
     data_placeholder = st.empty()
