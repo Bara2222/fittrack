@@ -29,6 +29,10 @@ class Config:
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
     
+    # URLs for OAuth redirects
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:8501')
+    BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
+    
     # Admin
     ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'Admin&4')
     

@@ -7,7 +7,7 @@ import os
 import io
 import csv
 import datetime
-from flask import Blueprint, jsonify, request, url_for, redirect
+from flask import Blueprint, jsonify, request, url_for, redirect, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -639,15 +639,18 @@ def google_callback():
         
         # Check for OAuth errors
         if error:
-            return redirect(f'http://localhost:8501/?auth=error&msg={error}')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg={error}')
         
         if not code:
-            return redirect('http://localhost:8501/?auth=error&msg=No+authorization+code+received')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg=No+authorization+code+received')
         
         # Verify state parameter (CSRF protection)
         stored_state = session.get('oauth_state')
         if not stored_state or stored_state != state:
-            return redirect('http://localhost:8501/?auth=error&msg=Invalid+state+parameter')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg=Invalid+state+parameter')
         
         # Clear the state from session
         session.pop('oauth_state', None)
@@ -672,13 +675,15 @@ def google_callback():
         
         if not token_response.ok:
             error_msg = token_json.get('error_description', 'Token exchange failed')
-            return redirect(f'http://localhost:8501/?auth=error&msg={error_msg}')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg={error_msg}')
         
         access_token = token_json.get('access_token')
         id_token = token_json.get('id_token')
         
         if not access_token:
-            return redirect('http://localhost:8501/?auth=error&msg=No+access+token+received')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg=No+access+token+received')
         
         # Get user info from Google
         userinfo_url = f'https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}'
@@ -686,7 +691,8 @@ def google_callback():
         userinfo = userinfo_response.json()
         
         if not userinfo_response.ok:
-            return redirect('http://localhost:8501/?auth=error&msg=Failed+to+get+user+info')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg=Failed+to+get+user+info')
         
         sub = userinfo.get('id')  # Google uses 'id' field
         email = userinfo.get('email')
@@ -714,13 +720,15 @@ def google_callback():
         login_user(user)
         logger.info(f'Google OAuth login: {user.username}')
         
-        return redirect(f'http://localhost:8501/?auth=success&user_id={user.id}')
+        frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+        return redirect(f'{frontend_url}/?auth=success&user_id={user.id}')
     
     except Exception as e:
         logger.error(f'Google callback error: {str(e)}')
         import traceback
         logger.error(f'Traceback: {traceback.format_exc()}')
-        return redirect(f'http://localhost:8501/?auth=error&msg={str(e)}')
+        frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+        return redirect(f'{frontend_url}/?auth=error&msg={str(e)}')
 
 
 @api_bp.route('/check_username', methods=['GET'])

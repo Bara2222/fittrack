@@ -14,6 +14,8 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - SECRET_KEY=${SECRET_KEY:-development-secret-key}
       - PYTHONPATH=/app
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8501}
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:5000}
     volumes:
       - ./instance:/app/instance
     networks:
