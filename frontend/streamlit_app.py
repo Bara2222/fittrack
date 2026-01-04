@@ -18,7 +18,7 @@ st.set_page_config(
     page_title="FitTrack - Fitness Tracker",
     page_icon="💪",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"  # Changed to expanded so menu is visible
 )
 
 # Initialize session and authentication
@@ -27,6 +27,35 @@ check_oauth_callback()
 
 # Apply global CSS styles
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+
+# Additional CSS to hide status messages
+st.markdown("""
+<style>
+/* Hide Streamlit status and spinner messages */
+.stSpinner {
+    display: none !important;
+}
+div[data-testid="stStatusWidget"] {
+    display: none !important;
+}
+.stToast {
+    display: none !important;
+}
+div[data-testid="stToastContainer"] {
+    display: none !important;
+}
+/* Hide elements containing "Running" text */
+div:contains("Running get_user") {
+    display: none !important;
+}
+div[class*="status"]:contains("Running") {
+    display: none !important;
+}
+.element-container:has([data-testid="stAlert"]) {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Get current page from session state
 current_page = st.session_state.get('page', 'landing')
@@ -48,22 +77,6 @@ if not check_login():
     landing_page()
 else:
     # Logged in - show app content with sidebar and WITHOUT footer
-    
-    # Auto-expand sidebar for logged-in users
-    st.markdown("""
-    <script>
-        // Wait for sidebar to be available
-        setTimeout(function() {
-            const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
-            if (sidebar) {
-                const collapseButton = sidebar.querySelector('button[kind="header"]');
-                if (collapseButton && sidebar.getAttribute('aria-expanded') === 'false') {
-                    collapseButton.click();
-                }
-            }
-        }, 100);
-    </script>
-    """, unsafe_allow_html=True)
     
     # Render sidebar navigation
     render_sidebar_navigation()

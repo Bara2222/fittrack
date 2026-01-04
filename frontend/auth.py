@@ -102,13 +102,48 @@ def check_oauth_callback():
             auth_val = auth_val[0] if auth_val else None
 
         if auth_val == 'success':
-            st.session_state['logged_in'] = True
-            st.success('Přihlášení přes Google úspěšné!')
-            # Clear query params
+            # Get user_id from OAuth callback
+            user_id = query_params.get('user_id')
+            
+            # Clear query params first
             try:
                 st.query_params.clear()
             except Exception:
                 pass
+            
+            # If we have user_id, set up session via API
+            if user_id:
+                session = st.session_state['session']
+                try:
+                    r = session.post(f"{API_BASE}/oauth/session", 
+                                   json={'user_id': user_id}, 
+                                   timeout=5)
+                    if r.ok:
+                        user_data = _safe_json(r)
+                        st.session_state['logged_in'] = True
+                        user_info = user_data.get('user', {})
+                        st.session_state['user'] = user_info
+                        
+                        # Initialize goals for test user Emil
+                        if user_info and user_info.get('username') == 'Emil':
+                            if 'fitness_goals' not in st.session_state:
+                                from emil_goals import initialize_emil_goals
+                                st.session_state['fitness_goals'] = initialize_emil_goals()
+                        
+                        st.success('Přihlášení přes Google úspěšné!')
+                        st.rerun()
+                        return
+                except Exception:
+                    pass
+            
+            # Fallback - try to check login status normally
+            if check_login():
+                st.session_state['logged_in'] = True
+                st.success('Přihlášení přes Google úspěšné!')
+                st.rerun()
+            else:
+                st.error('OAuth přihlášení bylo úspěšné, ale nepodařilo se načíst uživatelské údaje.')
+                
         elif auth_val == 'error':
             msg = query_params.get('msg')
             if isinstance(msg, list):
@@ -127,7 +162,15 @@ def check_login():
         r = session.get(f"{API_BASE}/me", timeout=2)
         if r.ok:
             st.session_state['logged_in'] = True
-            st.session_state['user'] = _safe_json(r).get('user')
+            user_data = _safe_json(r).get('user')
+            st.session_state['user'] = user_data
+            
+            # Initialize goals for test user Emil
+            if user_data and user_data.get('username') == 'Emil':
+                if 'fitness_goals' not in st.session_state:
+                    from emil_goals import initialize_emil_goals
+                    st.session_state['fitness_goals'] = initialize_emil_goals()
+            
             return True
     except Exception:
         pass
@@ -211,7 +254,15 @@ def login_page():
                         if r.ok:
                             st.session_state['logged_in'] = True
                             user_data = _safe_json(r)
-                            st.session_state['user'] = user_data.get('user', {})
+                            user_info = user_data.get('user', {})
+                            st.session_state['user'] = user_info
+                            
+                            # Initialize goals for test user Emil
+                            if user_info and user_info.get('username') == 'Emil':
+                                if 'fitness_goals' not in st.session_state:
+                                    from emil_goals import initialize_emil_goals
+                                    st.session_state['fitness_goals'] = initialize_emil_goals()
+                            
                             st.success('Úspěšně přihlášen!')
                             st.rerun()
                         else:

@@ -57,9 +57,20 @@ def create_app(config_name='development'):
     # Setup logging
     _setup_logging(app)
     
+    # Initialize OAuth
+    from backend.oauth import init_oauth
+    init_oauth(app)
+    
     # Register blueprints
     from backend.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+    
+    # Add OAuth redirect endpoint (for frontend compatibility)
+    @app.route('/auth/google')
+    def auth_google_redirect():
+        """Redirect /auth/google to /api/google/login"""
+        from flask import redirect, url_for
+        return redirect(url_for('api.google_login'))
 
     # Assign a per-request id for easier troubleshooting
     @app.before_request

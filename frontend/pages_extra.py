@@ -707,9 +707,24 @@ def goals_page():
     """Stránka cílů a sledování pokroku"""
     st.markdown('<div class="main-header">🎯 Moje cíle</div>', unsafe_allow_html=True)
     
+    # Check user authentication
+    current_user = st.session_state.get('user', {})
+    if not current_user:
+        st.warning("⚠️ Uživatel není správně přihlášen")
+        return
+    
     # Initialize goals in session state
     if 'fitness_goals' not in st.session_state:
-        st.session_state['fitness_goals'] = []
+        # Check if this is Emil and initialize his goals
+        if current_user and current_user.get('username') == 'Emil':
+            try:
+                from emil_goals import initialize_emil_goals
+                st.session_state['fitness_goals'] = initialize_emil_goals()
+                st.success("✅ Cíle úspěšně načteny!")
+            except ImportError:
+                st.session_state['fitness_goals'] = []
+        else:
+            st.session_state['fitness_goals'] = []
     
     tabs = st.tabs(["📊 Aktivní cíle", "➕ Přidat cíl", "✅ Dokončené"])
     
@@ -717,18 +732,36 @@ def goals_page():
     with tabs[0]:
         st.markdown("### 🎯 Vaše aktivní cíle")
         
+        # Add button to load Emil's test goals
+        current_user = st.session_state.get('user', {})
+        if current_user and current_user.get('username') == 'Emil':
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                if st.button("🔄 Načíst testovací cíle", help="Načte přednastavené cíle pro uživatele Emil"):
+                    try:
+                        from emil_goals import initialize_emil_goals
+                        st.session_state['fitness_goals'] = initialize_emil_goals()
+                        st.success("✅ Testovací cíle načteny!")
+                        st.rerun()
+                    except ImportError:
+                        st.error("❌ Chyba při načítání testovacích cílů")
+        
         active_goals = [g for g in st.session_state.get('fitness_goals', []) if not g.get('completed')]
         
         if not active_goals:
             st.info("🎯 Zatím nemáte žádné aktivní cíle. Začněte tím, že si nějaký vytvoříte!")
+            
+            # Show hint for Emil
+            if current_user and current_user.get('username') == 'Emil':
+                st.info("💡 Jako uživatel Emil můžete použít tlačítko '🔄 Načíst testovací cíle' výše.")
         else:
             for i, goal in enumerate(active_goals):
                 with st.container():
                     st.markdown(f"""
-                    <div style="padding: 20px; background: #1a1a1a; border-left: 4px solid #ffd700; 
-                         border-radius: 12px; margin: 15px 0;">
-                        <h3 style="color: #ffd700; margin-bottom: 10px;">{goal['icon']} {goal['name']}</h3>
-                        <p style="color: #cccccc; margin-bottom: 15px;">{goal['description']}</p>
+                    <div style="padding: 25px; background: #1a1a1a; border-left: 4px solid #ffd700; 
+                         border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+                        <h3 style="color: #ffd700; margin-bottom: 10px; font-size: 1.4em;">{goal['icon']} {goal['name']}</h3>
+                        <p style="color: #cccccc; margin-bottom: 20px; font-size: 1.1em;">{goal['description']}</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -737,14 +770,16 @@ def goals_page():
                     target = goal.get('target', 100)
                     progress = min(100, (current / target * 100)) if target > 0 else 0
                     
-                    # Progress bar
-                    col1, col2 = st.columns([4, 1])
+                    # Progress bar with better spacing
+                    col1, col2 = st.columns([5, 1])
                     with col1:
                         st.progress(progress / 100)
                     with col2:
-                        st.markdown(f"**{progress:.0f}%**")
+                        st.markdown(f"<div style='text-align: center; font-weight: bold; font-size: 1.2em; color: #ffd700;'>{progress:.0f}%</div>", unsafe_allow_html=True)
                     
-                    # Stats
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # Stats with better alignment
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
                         st.metric("Aktuálně", f"{current:.1f} {goal.get('unit', '')}")
@@ -757,8 +792,10 @@ def goals_page():
                         deadline = goal.get('deadline', 'Neuvedeno')
                         st.metric("Deadline", deadline)
                     
-                    # Actions
-                    col1, col2, col3 = st.columns([2, 1, 1])
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # Actions with better layout
+                    col1, col2, col3, col4 = st.columns([3, 1.5, 1.5, 0.5])
                     with col1:
                         new_value = st.number_input(
                             f"Aktualizovat pokrok", 
@@ -768,7 +805,7 @@ def goals_page():
                             key=f"update_goal_{i}"
                         )
                     with col2:
-                        if st.button("💾 Uložit", key=f"save_goal_{i}", use_container_width=True):
+                        if st.button("💾 Uložit", key=f"save_goal_{i}", use_container_width=True, type="primary"):
                             st.session_state['fitness_goals'][i]['current'] = new_value
                             if new_value >= target:
                                 st.session_state['fitness_goals'][i]['completed'] = True
@@ -780,7 +817,8 @@ def goals_page():
                             st.session_state['fitness_goals'].pop(i)
                             st.rerun()
                     
-                    st.markdown("<br>", unsafe_allow_html=True)
+                    # Separator between goals
+                    st.markdown("<hr style='margin: 30px 0; border: 1px solid #333;'>", unsafe_allow_html=True)
     
     # Tab 2: Add new goal
     with tabs[1]:

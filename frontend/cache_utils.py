@@ -7,14 +7,14 @@ from config import API_BASE
 from auth import _safe_json
 
 
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+@st.cache_data(ttl=300, show_spinner=False)  # Cache for 5 minutes
 def get_exercise_catalog():
     """Get cached exercise catalog"""
     from config import EXERCISE_CATALOG
     return EXERCISE_CATALOG
 
 
-@st.cache_data(ttl=60)  # Cache for 1 minute
+@st.cache_data(ttl=60, show_spinner=False)  # Cache for 1 minute
 def get_user_stats(user_id):
     """Get cached user statistics"""
     try:
@@ -27,7 +27,7 @@ def get_user_stats(user_id):
     return {}
 
 
-@st.cache_data(ttl=120)  # Cache for 2 minutes
+@st.cache_data(ttl=120, show_spinner=False)  # Cache for 2 minutes, hide spinner
 def get_user_workouts(user_id):
     """Get cached user workouts"""
     try:
@@ -40,7 +40,7 @@ def get_user_workouts(user_id):
     return []
 
 
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+@st.cache_data(ttl=300, show_spinner=False)  # Cache for 5 minutes
 def get_workout_templates():
     """Get cached workout templates"""
     # Predefined workout templates
@@ -114,7 +114,7 @@ def get_workout_templates():
     ]
 
 
-@st.cache_data(ttl=180)  # Cache for 3 minutes
+@st.cache_data(ttl=180, show_spinner=False)  # Cache for 3 minutes
 def get_recent_achievements(user_id):
     """Get cached user achievements"""
     try:

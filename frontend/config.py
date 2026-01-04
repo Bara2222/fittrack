@@ -45,10 +45,74 @@ html, body, [class*='css'] {
     background: var(--bg) !important;
 }
 
-/* Hide Streamlit elements */
+/* Hide Streamlit elements but keep header functional */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
+
+/* Hide Streamlit "Running" status messages */
+div[data-testid="stStatusWidget"] {
+    display: none !important;
+}
+
+.stSpinner > div {
+    display: none !important;
+}
+
+[data-testid="stStatus"] {
+    display: none !important;
+}
+
+/* Hide any element containing "Running" text */
+div:has-text("Running") {
+    display: none !important;
+}
+
+/* Additional selectors for running status */
+.stAlert {
+    display: none !important;
+}
+
+.running-text {
+    display: none !important;
+}
+
+/* Hide toast notifications that might show running status */
+div[data-testid="toastContainer"] {
+    display: none !important;
+}
+
+/* Hide any status messages in general */
+div[class*="status"] {
+    display: none !important;
+}
+
+/* Force hide elements with "Running" in text content */
+div:contains("Running") {
+    display: none !important;
+}
+
+div:contains("get_user_workouts") {
+    display: none !important;
+}
+
+/* Make header transparent but keep it functional for hamburger menu */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    z-index: 100 !important;
+}
+
+/* Hide the colorful decoration bar at top */
+div[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Style hamburger button to be visible */
+button[kind="header"] {
+    background-color: transparent !important;
+    color: var(--primary) !important;
+    border: 1px solid var(--primary) !important;
+    border-radius: 8px !important;
+}
 
 /* Container */
 .block-container{
@@ -376,8 +440,92 @@ button[kind="formSubmit"] {
     transition: all .3s ease;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
+
+/* Selectbox specific styling */
+.stSelectbox > div > div {
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    border: 2px solid rgba(255,215,0,0.3) !important;
+    border-radius: 12px !important;
+}
+
+.stSelectbox > div > div > div {
+    color: var(--text-primary) !important;
+    background: transparent !important;
+}
+
+/* Dropdown menu options */
+.stSelectbox [data-baseweb="select"] {
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    border: 2px solid rgba(255,215,0,0.3) !important;
+}
+
+/* Dropdown popover */
+[data-baseweb="popover"] {
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    border: 2px solid var(--primary) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(255,215,0,0.4) !important;
+}
+
+/* Dropdown menu items */
+[data-baseweb="menu"] {
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    border: none !important;
+    border-radius: 12px !important;
+}
+
+/* Individual dropdown options */
+[role="option"] {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    padding: 12px 16px !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+    margin: 2px 4px !important;
+    transition: all 0.2s ease !important;
+}
+
+[role="option"]:hover,
+[role="option"][aria-selected="true"] {
+    background: linear-gradient(135deg, var(--primary), var(--accent)) !important;
+    color: var(--text-secondary) !important;
+    transform: translateX(4px) !important;
+    box-shadow: 0 2px 8px rgba(255,215,0,0.3) !important;
+}
+
+/* Arrow icon in selectbox */
+.stSelectbox svg {
+    fill: var(--primary) !important;
+}
+
+/* Additional selectbox styling - alternative selectors */
+div[data-testid="stSelectbox"] > div > div {
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    border: 2px solid rgba(255,215,0,0.3) !important;
+    color: var(--text-primary) !important;
+}
+
+div[data-testid="stSelectbox"] div[role="combobox"] {
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    color: var(--text-primary) !important;
+    border: 2px solid rgba(255,215,0,0.3) !important;
+}
+
+/* Ensure all select dropdown text is visible */
+select, option {
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--primary) !important;
+}
+
+/* Force visibility for all dropdown elements */
+div[class*="select"] {
+    color: var(--text-primary) !important;
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c) !important;
+}
 .stTextInput>div>div>input:focus,
-.stTextArea>div>div>textarea:focus{
+.stTextArea>div>div>textarea:focus,
+.stSelectbox>div>div>div:focus {
     border-color: var(--primary) !important;
     box-shadow: 0 0 0 4px rgba(255,215,0,0.3), inset 0 2px 4px rgba(0,0,0,0.3) !important;
     background: linear-gradient(145deg, #303030, #202020) !important;

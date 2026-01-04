@@ -71,9 +71,13 @@ def register():
         return jsonify({'ok': False, 'error': 'Došlo k chybě při registraci. Zkuste to prosím znovu.'}), 500
 
 
-@api_bp.route('/login', methods=['POST'])
+@api_bp.route('/login', methods=['POST', 'GET'])
 def login():
     """User login"""
+    if request.method == 'GET':
+        # Flask-Login redirect - return JSON response for API
+        return jsonify({'ok': False, 'error': 'Authentication required', 'login_required': True}), 401
+    
     try:
         data = request.get_json() or {}
         
@@ -534,47 +538,157 @@ def admin_get_users():
 # OAUTH (GOOGLE)
 # ============================================================================
 
+# OAuth session endpoint
+@api_bp.route('/oauth/session', methods=['POST'])
+def oauth_session():
+    """Set session for OAuth authenticated user"""
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'ok': False, 'error': 'User ID required'}), 400
+            
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'ok': False, 'error': 'User not found'}), 404
+            
+        # Log the user in for this session
+        login_user(user, remember=True)
+        
+        return jsonify({
+            'ok': True,
+            'user': user.to_dict()
+        })
+        
+    except Exception as e:
+        logger.error(f'OAuth session error: {str(e)}')
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+# Test endpoint
+@api_bp.route('/test-oauth', methods=['GET'])
+def test_oauth():
+    """Test OAuth configuration"""
+    try:
+        from flask import current_app
+        from backend.oauth import oauth, is_configured
+        return jsonify({
+            'oauth_configured': is_configured(),
+            'oauth_object': str(oauth),
+            'google_client_id': current_app.config.get('GOOGLE_CLIENT_ID', 'NOT SET'),
+            'google_client_secret_set': bool(current_app.config.get('GOOGLE_CLIENT_SECRET'))
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
 @api_bp.route('/google/login', methods=['GET'])
 def google_login():
-    """Initiate Google OAuth login"""
+    """Initiate Google OAuth login - Simple version"""
     try:
         from backend.oauth import oauth, is_configured
         
         if not is_configured() or oauth is None:
             return jsonify({'ok': False, 'error': 'Google OAuth is not configured'}), 501
         
+        # Simple redirect without extra complexity
         redirect_uri = url_for('api.google_callback', _external=True)
-        auth_url, state = oauth.google.create_authorization_url(redirect_uri)
         
-        return jsonify({'ok': True, 'auth_url': auth_url, 'state': state})
+        # Create authorization URL manually for better control
+        from urllib.parse import urlencode
+        import secrets
+        
+        google_auth_url = 'https://accounts.google.com/o/oauth2/auth'
+        state = secrets.token_urlsafe(32)
+        
+        params = {
+            'client_id': oauth.google.client_id,
+            'redirect_uri': redirect_uri,
+            'scope': 'openid email profile',
+            'response_type': 'code',
+            'state': state,
+        }
+        
+        auth_url = f"{google_auth_url}?{urlencode(params)}"
+        
+        # Store state in session for security
+        from flask import session
+        session['oauth_state'] = state
+        
+        # Return redirect response
+        from flask import redirect
+        return redirect(auth_url)
     
     except Exception as e:
+        import traceback
         logger.error(f'Google login error: {str(e)}')
-        return jsonify({'ok': False, 'error': 'OAuth initialization failed'}), 500
+        logger.error(f'Traceback: {traceback.format_exc()}')
+        return jsonify({'ok': False, 'error': f'OAuth failed: {str(e)}'}), 500
 
 
 @api_bp.route('/google/callback', methods=['GET'])
 def google_callback():
-    """Handle Google OAuth callback"""
+    """Handle Google OAuth callback - Manual implementation"""
     try:
-        from backend.oauth import oauth, is_configured
+        from flask import request, session
         
-        if not is_configured() or oauth is None:
-            return redirect('http://localhost:8501/?auth=error&msg=OAuth+not+configured')
+        # Get the authorization code and state from query params
+        code = request.args.get('code')
+        state = request.args.get('state')
+        error = request.args.get('error')
         
-        token = oauth.google.authorize_access_token()
-        userinfo = token.get('userinfo')
+        # Check for OAuth errors
+        if error:
+            return redirect(f'http://localhost:8501/?auth=error&msg={error}')
         
-        if not userinfo:
-            try:
-                userinfo = oauth.google.parse_id_token(token)
-            except Exception:
-                pass
+        if not code:
+            return redirect('http://localhost:8501/?auth=error&msg=No+authorization+code+received')
         
-        if not userinfo:
+        # Verify state parameter (CSRF protection)
+        stored_state = session.get('oauth_state')
+        if not stored_state or stored_state != state:
+            return redirect('http://localhost:8501/?auth=error&msg=Invalid+state+parameter')
+        
+        # Clear the state from session
+        session.pop('oauth_state', None)
+        
+        # Exchange authorization code for access token
+        import requests
+        from backend.oauth import oauth
+        
+        token_url = 'https://oauth2.googleapis.com/token'
+        redirect_uri = url_for('api.google_callback', _external=True)
+        
+        token_data = {
+            'client_id': oauth.google.client_id,
+            'client_secret': oauth.google.client_secret,
+            'code': code,
+            'grant_type': 'authorization_code',
+            'redirect_uri': redirect_uri,
+        }
+        
+        token_response = requests.post(token_url, data=token_data)
+        token_json = token_response.json()
+        
+        if not token_response.ok:
+            error_msg = token_json.get('error_description', 'Token exchange failed')
+            return redirect(f'http://localhost:8501/?auth=error&msg={error_msg}')
+        
+        access_token = token_json.get('access_token')
+        id_token = token_json.get('id_token')
+        
+        if not access_token:
+            return redirect('http://localhost:8501/?auth=error&msg=No+access+token+received')
+        
+        # Get user info from Google
+        userinfo_url = f'https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}'
+        userinfo_response = requests.get(userinfo_url)
+        userinfo = userinfo_response.json()
+        
+        if not userinfo_response.ok:
             return redirect('http://localhost:8501/?auth=error&msg=Failed+to+get+user+info')
         
-        sub = userinfo.get('sub')
+        sub = userinfo.get('id')  # Google uses 'id' field
         email = userinfo.get('email')
         name = userinfo.get('name') or (email.split('@')[0] if email else f'user_{sub[:6]}')
         
@@ -599,10 +713,13 @@ def google_callback():
         
         login_user(user)
         logger.info(f'Google OAuth login: {user.username}')
-        return redirect('http://localhost:8501/?auth=success')
+        
+        return redirect(f'http://localhost:8501/?auth=success&user_id={user.id}')
     
     except Exception as e:
         logger.error(f'Google callback error: {str(e)}')
+        import traceback
+        logger.error(f'Traceback: {traceback.format_exc()}')
         return redirect(f'http://localhost:8501/?auth=error&msg={str(e)}')
 
 

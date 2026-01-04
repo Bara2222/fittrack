@@ -34,8 +34,9 @@ class Config:
     
     # Session
     SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_HTTPONLY = False  # Allow frontend to access session
+    SESSION_COOKIE_SAMESITE = 'None' if SESSION_COOKIE_SECURE else 'Lax'  # Allow cross-origin
+    SESSION_COOKIE_DOMAIN = None  # Allow all domains in development
 
 class DevelopmentConfig(Config):
     """Development configuration"""
