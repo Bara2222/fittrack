@@ -20,7 +20,7 @@ http://127.0.0.1:5000/api/google/callback
 
 ### 2. Environment Variables
 
-Vytvořte nebo upravte `.env` soubor:
+Docker automaticky používá správné environment variables. V `.env` souboru:
 
 ```bash
 # Google OAuth credentials
@@ -31,6 +31,20 @@ GOOGLE_CLIENT_SECRET=your-client-secret-here
 FRONTEND_URL=http://localhost:8501
 BACKEND_URL=http://localhost:5000
 ```
+
+### 3. Docker konfigurace
+
+Docker-compose automaticky nastavuje:
+- `API_BASE=http://backend:5000/api` (interní Docker komunikace)
+- `API_BASE_EXTERNAL=http://localhost:5000/api` (externí browser přístupy)
+
+### 4. OAuth Flow v Dockeru
+
+1. **User klikne "Přihlásit se přes Google"** na http://localhost:8501
+2. **Browser přesměrován na** `http://localhost:5000/auth/google`
+3. **Google autorizace** → přesměrování na Google
+4. **Google callback** → `http://localhost:5000/api/google/callback`
+5. **Backend zpracuje OAuth** a přesměruje na `http://localhost:8501/?auth=success`
 
 ### 3. Spuštění Docker kontejnerů
 

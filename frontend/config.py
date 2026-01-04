@@ -16,7 +16,18 @@ def get_api_base():
             api_base = 'http://localhost:5000/api'
     return api_base
 
+def get_api_base_external():
+    """Get external API base URL for browser redirects (OAuth)"""
+    api_base_external = os.environ.get('API_BASE_EXTERNAL')
+    if not api_base_external:
+        try:
+            api_base_external = st.secrets.get('api_base_external', 'http://localhost:5000/api')
+        except:
+            api_base_external = 'http://localhost:5000/api'
+    return api_base_external
+
 API_BASE = get_api_base()
+API_BASE_EXTERNAL = get_api_base_external()
 
 # Global CSS Styles
 GLOBAL_CSS = r"""

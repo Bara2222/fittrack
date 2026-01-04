@@ -34,6 +34,7 @@ services:
       - STREAMLIT_SERVER_PORT=8501
       - STREAMLIT_SERVER_ADDRESS=0.0.0.0
       - API_BASE=http://backend:5000/api
+      - API_BASE_EXTERNAL=http://localhost:5000/api
       - PYTHONPATH=/app
     depends_on:
       - backend

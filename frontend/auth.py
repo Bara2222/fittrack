@@ -4,7 +4,7 @@ Handles login, registration, OAuth, and session management.
 """
 import streamlit as st
 import requests
-from config import API_BASE
+from config import API_BASE, API_BASE_EXTERNAL
 
 
 def _safe_json(resp, default=None):
@@ -272,7 +272,7 @@ def login_page():
 
         st.markdown("---")
         # Google OAuth
-        oauth_url = f"{API_BASE.replace('/api', '')}/auth/google"
+        oauth_url = f"{API_BASE_EXTERNAL.replace('/api', '')}/auth/google"
         if st.button("🌐 Přihlásit se přes Google", use_container_width=True, type="primary"):
             st.markdown(f'<meta http-equiv="refresh" content="0; url={oauth_url}">', 
                       unsafe_allow_html=True)
