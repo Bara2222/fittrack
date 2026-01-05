@@ -1,0 +1,714 @@
+% ŠABLONA PRO PSANÍ ZÁVĚREČNÉ STUDIJNÍ PRÁCE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Autor: Jakub Dokulil (kubadokulil99@gmail.com)
+% Tato šablona byla vytvořena tak, aby pomocí ní mohli v systému LaTeX soutěžící sázet své práce a zároveň odpovídala požadavkům na formátování vyplývajícím z wordové šablony umístěné na webu soc.cz.
+%
+\documentclass[12pt, a4paper,
+oneside,      %% -- odkomentujte, pokud chcete svou práci mít pouze jednostrannou, mezera pro hřbet pak automaticky bude pouze na levé straně
+%twoside,        %% -- pro oboustranné práce, mezera pro hřbet následně střídá strany.
+%openright
+]{report}
+
+% --- odstraneni zbytkoveho textu "superiorSup" a pod. ---
+%\AtBeginDocument{%
+	% pojistka proti nechtenemu textu nactenemu z aux/toc
+%	\immediate\write16{(cleaning stray figureversions output...)}%
+%	\clearpage
+%	\thispagestyle{empty}
+	% uplne vyprazdneni vseho, co by se objevilo mimo hlavni text
+%	\let\superiorSup\relax
+%	\let\textOsF\relax
+%	\let\textTOsF\relax
+%	\let\liningLF\relax
+%	\let\liningTLF\relax
+%	\let\tabularTab\relax
+%	\let\proportionalProp\relax
+%	\let\tabularmath\relax
+%	\let\proportionalmath\relax
+%	\let\fontspechyperref\relax
+	% zajisteni, ze se nic nezobrazi pred titulni stranou
+%	\null
+%	\newpage
+%}
+%% Nutné balíčky a nastavení
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Proměnné
+\newcommand\obor{INFORMAČNÍ TECHNOLOGIE} %% -- napiš číslo a název tvého oboru
+\newcommand\kodOboru{18-20-M/01} %% -- napiš číslo a název tvého oboru
+\newcommand\zamereni{se zaměřením na počítačové sítě a programování} %% -- napiš číslo a název tvého oboru
+\newcommand\skola{Střední škola průmyslová a umělecká, Opava} %% vyplň název školy
+\newcommand\trida{IT4} %% vyplň jméno svého konzultanta
+\newcommand\jmenoAutora{Barbora Žemličková}  %% vyplň své jméno
+\newcommand\skolniRok{2025/26} %% vyplň rok
+\newcommand\datumOdevzdani{1. 1. 2026} %% vyplň rok
+\newcommand\nazevPrace{Webová aplikace pro zaznamenávání tréninků 
+a výkonů (frontend část)} %% vyplň název své práce
+
+\title{\nazevPrace} %% -- Název tvé práce
+\author{\jmenoAutora} %% -- tvé jméno
+\date{\datumOdevzdani} %% -- rok, kdy píšeš SOČku
+
+\usepackage[top=2.5cm, bottom=2.5cm, left=3.5cm, right=1.5cm]{geometry} %% nastaví okraje, left -- vnitřní okraj, right -- vnější okraj
+
+\usepackage[czech]{babel} %% balík babel pro sazbu v češtině
+\usepackage[utf8]{inputenc} %% balíky pro kódování textu
+\usepackage[T1]{fontenc}
+\usepackage{cmap} %% balíček zajišťující, že vytvořené PDF bude prohledávatelné a kopírovatelné
+
+\usepackage{graphicx} %% balík pro vkládání obrázků
+
+\usepackage{subcaption} %% balíček pro vkládání podobrázků
+
+\usepackage{hyperref} %% balíček, který v PDF vytváří odkazy
+
+\linespread{1.25} %% řádkování
+\setlength{\parskip}{0.5em} %% odsazení mezi odstavci
+
+
+\usepackage[pagestyles]{titlesec} %% balíček pro úpravu stylu kapitol a sekcí
+\titleformat{\chapter}[block]{\scshape\bfseries\LARGE}{\thechapter}{10pt}{\vspace{0pt}}[\vspace{-22pt}]
+\titleformat{\section}[block]{\scshape\bfseries\Large}{\thesection}{10pt}{\vspace{0pt}}
+\titleformat{\subsection}[block]{\bfseries\large}{\thesubsection}{10pt}{\vspace{0pt}}
+
+
+\usepackage{tocloft} % Balíček umožní přizpůsobit vzhled tabulky obsahu
+\setlength{\cftbeforechapskip}{0pt}  % Menší rozestup pro kapitoly
+\setlength{\cftbeforesecskip}{0pt}   % Menší rozestup pro sekce
+
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{1}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0.025pt}
+
+\usepackage{booktabs}
+
+\usepackage{url}
+
+%% Balíčky co se můžou hodit :) 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{pdfpages} %% Balíček umožňující vkládat stránky z PDF souborů, 
+
+\usepackage{upgreek} %% Balíček pro sazbu stojatých řeckých písmen, třeba u jednotky mikrometr. Například stojaté mí: \upmu, stojaté pí: \uppi
+
+\usepackage{amsmath}    %% Balíčky amsmath a amsfonts 
+\usepackage{amsfonts}   %% pro sazbu matematických symbolů
+\usepackage{esint}     %% pro sazbu různých integrálů (např \oiint)
+\usepackage{mathrsfs}
+\usepackage{helvet} % Helvet font
+\usepackage{mathptmx} % Times New Roman
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\makeatletter
+\@namedef{ver@figureversions.sty}{9999/99/99}
+\newcommand{\DeclareFigureVersion}[2]{}
+\newcommand{\figureversion}[1]{}
+\makeatother
+
+
+\makeatletter
+\providecommand{\superiorSup}{}
+\providecommand{\textOsF}{}
+\providecommand{\textTOsF}{}
+\providecommand{\liningLF}{}
+\providecommand{\liningTLF}{}
+\providecommand{\tabularTab}{}
+\providecommand{\proportionalProp}{}
+\makeatother
+\makeatletter
+\providecommand{\superiorSup}{}
+\providecommand{\textOsF}{}
+\providecommand{\textTOsF}{}
+\providecommand{\liningLF}{}
+\providecommand{\liningTLF}{}
+\providecommand{\tabularTab}{}
+\providecommand{\proportionalProp}{}
+\providecommand{\tabularmath}{}
+\providecommand{\proportionalmath}{}
+\makeatother
+
+%\usepackage{Oswald} % Oswald font
+
+
+%% makra pro sazbu matematiky
+\newcommand{\dif}{\mathrm{d}} %% makro pro sazbu diferenciálu, místo toho
+%% abych musel psát '\mathrm{d}' mi stačí napsat '\dif' což je mnohem 
+%% kratší a mohu si tak usnadnit práci
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\renewcommand{\lstlistingname}{Kód}% Listing -> Algorithm
+\renewcommand{\lstlistlistingname}{Seznam programových kódů}% List of Listings -> List of Algorithms
+
+%% Definice 
+\lstdefinelanguage{JavaScript}{
+	morekeywords=[1]{break, continue, delete, else, for, function, if, in,
+		new, return, this, typeof, var, void, while, with},
+	% Literals, primitive types, and reference types.
+	morekeywords=[2]{false, null, true, boolean, number, undefined,
+		Array, Boolean, Date, Math, Number, String, Object},
+	% Built-ins.
+	morekeywords=[3]{eval, parseInt, parseFloat, escape, unescape},
+	sensitive,
+	morecomment=[s]{/*}{*/},
+	morecomment=[l]//,
+	morecomment=[s]{/**}{*/}, % JavaDoc style comments
+	morestring=[b]',
+	morestring=[b]"
+}[keywords, comments, strings]
+
+
+\lstdefinelanguage[ECMAScript2015]{JavaScript}[]{JavaScript}{
+	morekeywords=[1]{await, async, case, catch, class, const, default, do,
+		enum, export, extends, finally, from, implements, import, instanceof,
+		let, static, super, switch, throw, try},
+	morestring=[b]` % Interpolation strings.
+}
+
+\lstalias[]{ES6}[ECMAScript2015]{JavaScript}
+
+% Nastavení barev
+% Requires package: color.
+\definecolor{mediumgray}{rgb}{0.3, 0.4, 0.4}
+\definecolor{mediumblue}{rgb}{0.0, 0.0, 0.8}
+\definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
+\definecolor{darkviolet}{rgb}{0.58, 0.0, 0.83}
+\definecolor{royalblue}{rgb}{0.25, 0.41, 0.88}
+\definecolor{crimson}{rgb}{0.86, 0.8, 0.24}
+
+% Nastavení pro Python
+\lstdefinestyle{Python}{
+	language=Python,
+	backgroundcolor=\color{white},
+	basicstyle=\ttfamily,
+	breakatwhitespace=false,
+	breaklines=false,
+	captionpos=b,
+	columns=fullflexible,
+	commentstyle=\color{mediumgray}\upshape,
+	emph={},
+	emphstyle=\color{crimson},
+	extendedchars=true,  % requires inputenc
+	fontadjust=true,
+	frame=single,
+	identifierstyle=\color{black},
+	keepspaces=true,
+	keywordstyle=\color{mediumblue},
+	keywordstyle={[2]\color{darkviolet}},
+	keywordstyle={[3]\color{royalblue}},
+	literate=%
+	{á}{{\'a}}1 {č}{{\v{c}}}1 {ď}{{\v{d}}}1 {é}{{\'e}}1 {ě}{{\v{e}}}1
+	{í}{{\'i}}1 {ň}{{\v{n}}}1 {ó}{{\'o}}1 {ř}{{\v{r}}}1 {š}{{\v{s}}}1
+	{ť}{{\v{t}}}1 {ú}{{\'u}}1 {ů}{{\r{u}}}1 {ý}{{\'y}}1 {ž}{{\v{z}}}1,		
+	numbers=left,
+	numbersep=5pt,
+	numberstyle=\tiny\color{black},
+	rulecolor=\color{black},
+	showlines=true,
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+	stringstyle=\color{forestgreen},
+	tabsize=2,
+	title=\lstname,
+	upquote=true  % requires textcomp	
+}
+
+
+\lstdefinestyle{JSES6Base}{
+	backgroundcolor=\color{white},
+	basicstyle=\ttfamily,
+	breakatwhitespace=false,
+	breaklines=false,
+	captionpos=b,
+	columns=fullflexible,
+	commentstyle=\color{mediumgray}\upshape,
+	emph={},
+	emphstyle=\color{crimson},
+	extendedchars=true,  % requires inputenc
+	fontadjust=true,
+	frame=single,
+	identifierstyle=\color{black},
+	keepspaces=true,
+	keywordstyle=\color{mediumblue},
+	keywordstyle={[2]\color{darkviolet}},
+	keywordstyle={[3]\color{royalblue}},
+	literate=%
+	{á}{{\'a}}1 {č}{{\v{c}}}1 {ď}{{\v{d}}}1 {é}{{\'e}}1 {ě}{{\v{e}}}1
+	{í}{{\'i}}1 {ň}{{\v{n}}}1 {ó}{{\'o}}1 {ř}{{\v{r}}}1 {š}{{\v{s}}}1
+	{ť}{{\v{t}}}1 {ú}{{\'u}}1 {ů}{{\r{u}}}1 {ý}{{\'y}}1 {ž}{{\v{z}}}1,		
+	numbers=left,
+	numbersep=5pt,
+	numberstyle=\tiny\color{black},
+	rulecolor=\color{black},
+	showlines=true,
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+	stringstyle=\color{forestgreen},
+	tabsize=2,
+	title=\lstname,
+	upquote=true  % requires textcomp
+}
+
+\lstdefinestyle{JavaScript}{
+	language=JavaScript,
+	style=JSES6Base,
+}
+\lstdefinestyle{ES6}{
+	language=ES6,
+	style=JSES6Base
+}
+
+\setlength{\headheight}{15pt}
+
+\usepackage{fancyhdr}
+\setlength{\headheight}{15pt}
+
+% ===============================
+% Záhlaví a zápatí
+% ===============================
+\fancyhf{}                                % vymazání výchozího obsahu
+\fancyhead[L]{Závěrečná práce}
+\fancyhead[C]{Barbora Žemličková IT4}
+\fancyhead[R]{2025/2026}
+\fancyfoot[C]{\thepage}
+
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Styl pro kapitoly (\chapter)
+\fancypagestyle{plain}{
+	\fancyhf{}
+	\fancyhead[L]{Závěrečná práce}
+	\fancyhead[C]{Barbora Žemličková IT4}
+	\fancyhead[R]{2025/2026}
+	\fancyfoot[C]{\thepage}
+	\renewcommand{\headrulewidth}{0.4pt}
+}
+
+
+
+
+%% Začátek dokumentu
+%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+	
+	\pagestyle{empty}
+	\pagenumbering{Roman}
+	\pagenumbering{gobble} % žádné číslování
+	%\clearpage
+	
+	%% Titulní stránka s informacemi
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	{\fontfamily{phv}\selectfont
+		%% Logo školy
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=0.6\linewidth]{image/logo-skoly.png} 
+		\end{figure}
+		
+		
+		%% Hlavička práce a její název (viz proměnná \nazev prace)
+		%% \sffamily %%% bezpatkové písmo - sans serif
+		{\bfseries %%% písmo na stránce je tučně
+			\begin{center}
+				\vspace{0.025 \textheight}
+				\LARGE{ZÁVĚREČNÁ STUDIJNÍ PRÁCE}\\
+				\large{dokumentace}\\
+				\vspace{0.075 \textheight}
+				\LARGE {\nazevPrace}\\
+			\end{center}  
+		}%%%
+		
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=0.4\linewidth]{image/image.png} 
+		\end{figure}
+		
+		\vspace{0.02 \textheight}
+		\begin{table}[h!]
+			\begin{tabular}{ll}
+				\textbf{Autor:} & \jmenoAutora\\ 
+				\textbf{Obor:} & \kodOboru { } \obor\\
+				\textbf{} & \zamereni\\
+				\textbf{Třída:} & \trida\\
+				\textbf{Školní rok:} & \skolniRok\\
+			\end{tabular}
+			
+		\end{table}		
+	}
+	
+	\clearpage %% Zalomení dvojstránky
+	
+	%% Stránka obsahující poděkování a prohlášení
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	%% Poděkování - nepovinné
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	\noindent{\large{\bfseries{Poděkování}\\}}
+	\noindent Ráda bych tímto poděkovala pánům učitelům Ing. Petru Grussmannovi a Mgr. Marku Lučnému za jejich cenné rady, připomínky a za pomoc s projektem.
+	
+	\vspace*{0.65\textheight} %% Vertikální mezeru je možné upravit
+	
+	%% Prohlášení - povinné
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\noindent{\large{\bfseries{Prohlášení}\\}}  %% uprav si koncovky podle toho na jaký rod se cítíš, vypadá to pak lépe :) 
+	\noindent{Prohlašuji, že jsem závěrečnou práci vypracovala samostatně a uvedla veškeré použité 
+		informační zdroje.\\}
+	\noindent{Souhlasím, aby tato studijní práce byla použita k výukovým a prezentačním účelům na Střední průmyslové a umělecké škole v Opavě, Praskova 399/8.}
+	\vfill
+	\noindent{V Opavě \datumOdevzdani\\}
+	\noindent
+	\begin{minipage}{\linewidth}
+		\hspace{9.5cm} 
+		\begin{tabular}{@{}p{6cm}@{}}
+			\dotfill \\
+			Podpis autora
+		\end{tabular}
+	\end{minipage}
+    \vspace{20pt}
+	
+	
+	
+	
+	%% Stránka obsahující abstrakt (anotaci)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
+	
+	%% Abstrakt v češtině
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\noindent{\Large{\bfseries{Abstrakt}\\}}
+	\noindent Výsledkem projektu je funkční webová aplikace Fit Track určená pro sledování fitness cílů a detailní analýzu tréninkového pokroku. Aplikace zahrnuje bezpečnou registraci a správu uživatelských účtů, včetně možnosti zjednodušeného přihlášení přes Google OAuth. Uživatel si v intuitivním rozhraní vede osobní tréninkový deník, kde eviduje jednotlivé cviky s parametry jako jsou série, opakování a váhy. Aplikace nabízí katalog cviků pro in-spiraci a funkci, také "Rychlý start" s předpřipravenými plány pro různé úrovně pokročilos-ti. Dalsí částí pro zpětnou vazbu je analytický dashboard, který zpracovává data do interak-tivních grafů. Ty vizualizují frekvenci cvičení, objem zvednuté zátěže a celkový progres v čase. Aplikace disponuje moderním responzivním designem s tmavým motivem.
+
+	
+	\vspace{20pt}
+	
+	\noindent{\large{\bfseries Klíčová slova}}\\
+	webová aplikace, fitness tracker, vizualizace dat, Python, Streamlit, tréninkový deník
+	
+	
+	\vspace{20pt}
+	
+	%% Abstrakt v angličtině
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
+	\noindent{\Large{\bfseries{Abstract}}}
+	
+	\noindent The result of the project is a functional web application Fit Track designed for tracking fitness goals and detailed analysis of training progress. The application includes secure registration and management of user accounts, including the option of simplified login via Google OAuth. The user keeps a personal training diary in an intuitive interface, where he records individual exercises with parameters such as sets, repetitions and weights. The application offers a catalog of exercises for inspiration and function, as well as a "Quick Start" with prepared plans for different levels of proficiency. Another part for feedback is an analytical dashboard that processes data into interactive graphs. These visualize the frequency of exercises, the volume of the load lifted and the overall progress over time. The application has a modern responsive design with a dark theme.
+
+	
+	
+	\vspace{25pt}
+	
+	\noindent{\large{\bfseries{Keywords}}}
+	web application, fitness tracker, data visualization, Python, Streamlit, training diary
+
+    \vspace{20pt}
+	
+	
+	
+	%\clearpage %% Zalomení stránky
+	
+	%% Stránka s generovaným obsahem
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
+	 \vspace{20pt}
+	\tableofcontents %% Vygeneruje tabulku s obsahem
+	
+	\clearpage
+	
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	\pagestyle{fancy}
+	\vspace{20pt}
+	%% Stránka s úvodem - povinná část
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
+	\chapter{Úvod}
+	%Tento příkaz vytvoří novou kapitolu s názvem "Úvod" ve vašem dokumentu.
+	%Hvězdička * u příkazu \chapter* znamená, že tato kapitola nebude mít číslo. Ve výsledném dokumentu se tedy objeví jako "Úvod" bez předcházejícího čísla kapitoly, které se obvykle zobrazuje u číslovaných kapitol.
+	%Tento příkaz také znamená, že kapitola se automaticky neobjeví v obsahu, protože LaTeX standardně zahrnuje do obsahu pouze číslované kapitoly.
+	\addcontentsline{toc}{chapter}{Úvod}
+	%Tento příkaz ručně přidává záznam do obsahu.
+	%První parametr toc označuje, že přidáváme záznam do Table of Contents (obsahu).
+	%Druhý parametr chapter specifikuje úroveň záznamu. V tomto případě říkáme, že přidávaný záznam má být považován za kapitolu.
+	%Třetí parametr Úvod je text, který se objeví v obsahu. V tomto případě bude v obsahu zobrazen název "Úvod".	
+	Každý profesionální sportovec si vede řádný záznam o svých trénincích. Mít přehled v trénincích zajišťuje jejich lepší správu, a tedy i lepší výsledky. V dnešní době se k tomuto účelu již běžně nepoužívá tužka a papír, ale aplikace v elektronické podobě. Často se však jedná o nepřehledné systémy, které neumožňují rychlou analýzu dat přímo v posilovně. Mým cílem bylo sestavení frontendové části webové aplikace Fit Track, která by v co nejpřehlednější podobě vizualizovala tréninkový progres. Aplikace je navržena tak, aby uživateli umožnila bezpečné přihlášení (včetně Google OAuth) a následné intuitivní vkládání výkonů. Dalsí částí mé práce je vytvoření analytického dashboardu, který surová data transformuje do interaktivních grafů. Celé rozhraní je plně responzivní s důrazem na tmavý motiv, který je pro fitness aplikace ideální. V dokumentaci se podrobně zabývám výběrem technologií pro frontend, realizací uživatelského rozhraní v prostředí Streamlit a propojením aplikace s backendovými službami.
+
+	\section{Zkušenosti}
+	
+	Před začátkem práce na projektu Fit Track jsem neměla s frameworkem Streamlit žádné předchozí zkušenosti. Moje dosavadní znalosti webového vývoje se omezovaly na základy HTML a CSS, případně na jednoduché skripty v Pythonu. Tvorba komplexní webové aplikace s interaktivními prvky pro mě tedy byla zcela novou výzvou. Původně jsem zvažovala použití klasických cest (např. Flask nebo Django), ale brzy jsem narazila na vysokou časovou náročnost tvorby frontendu pomocí šablon a propojování s JavaScriptem. Jako začátečník v oblasti webových aplikací jsem hledala nástroj, který by mi umožnil rychle vytvořit profesionálně vypadající rozhraní bez nutnosti hluboké znalosti frontendových frameworků. Streamlit se ukázal jako ideální volba, i když vyžadoval zcela jiný způsob přemýšlení o tom, jak webová stránka funguje.
+	
+	
+	
+	%Tipy k psaní úvodu
+	%Je povinný, nadpis neměňte, rozsah - max. 1 strana. 
+	%Tato část práce obsahuje: 
+	%* náhled do řešené problematiky, zdůvodnění volby problematiky, 
+	%* předem definované cíle práce, 
+	%* motivaci pro další čtení textu včetně stručného uvedení obsahu následujících kapitol 
+	
+	
+	\chapter{Využité technologie}
+    \section{Python}
+	
+	Pro vývoj aplikace Fit Track jsem zvolila jazyk Python. Ačkoliv jsem s ním před začátkem projektu měla jen minimální zkušenosti, rychle se ukázal jako ideální volba pro projekt tohoto typu. Python je interpretovaný, vysokoúrovňový jazyk, který je dnes standardem v oblasti analýzy dat a webového vývoje.
+    
+	\section{Streamlit}
+	
+	Streamlit je open-source framework určený pro rychlou tvorbu datových aplikací. Hlavním důvodem, proč jsem pro frontend zvolila Streamlit, je jeho úzká vazba na jazyk Python a také proto, že umožňuje definovat uživatelské rozhraní přímo v kódu bez nutnosti psát rozsáhlé HTML nebo CSS šablony. Streamlit se stará o vykreslování prvků a správu stavu aplikace.
+	
+	\subsection{Výhody využití Streamlitu}
+	
+	\begin{itemize}
+		\item \textbf{Extrémní rychlost vývoje} – umožňuje vytvořit funkční rozhraní (tlačítka, grafy, nahrávání dat).
+		\item \textbf{Čistě Pythonovské prostředí} – Nemusí se přepínat mezi Pythonem, HTML, CSS a JavaScriptem, vše se píše v jednom jazyce.
+		\item \textbf{Nativní podpora pro interaktivní grafy} – skvěle si rozumí s knihovnami jako Plotly nebo Altair. Stačí mu předat data a on se postará o to, aby se graf správně zobrazil a byl interaktivní.
+		\item \textbf{Hotové komponenty pro vstupy dat} – má v sobě už hotové prvky jako kalendáře, posuvníky nebo výběry z menu.
+        \item \textbf{Interaktivita bez načítání} – ovládací prvky (tlačítka, posuvníky, výběry) přímo propojené s proměnnými v Pythonu.
+	\end{itemize}
+	
+	\section{Plotly}
+    Pro generování grafů jsem využila knihovnu Plotly. Na rozdíl od statických obrázků umožňuje Plotly vytvářet interaktivní grafy, kde si uživatel může po najetí myší (nebo dotykem na mobilu) zobrazit přesné hodnoty jednotlivých sérií a tréninků.
+	\section{Requests a JSON}
+	
+	Jelikož je aplikace rozdělena na klientskou a serverovou část, využívám knihovnu Requests pro komunikaci s API. Data jsou přenášena ve formátu JSON, což zajišťuje lehkost a rychlost přenosu informací mezi frontendem a databází.
+	
+	
+	\section{Vývojové prostředí}
+	\begin{itemize}
+		\item \textbf{ Visual Studio Code} – hlavní integrované vývojové prostředí používané pro psaní kódu a práci s emulátory.
+		
+	\end{itemize}
+	
+	Jako hlavní nástroj pro psaní veškerého zdrojového kódu jsem zvolila editor Visual Studio Code. Na rozdíl od frameworku Streamlit, který byl pro mě novinkou, je pro mě toto prostředí velmi známé. VS Code používám jako svůj primární nástroj již od začátku studia na střední škole, což mi umožnilo se plně soustředit na řešení logiky aplikace a neřešit ovládání samotného editoru.
+    \bigskip
+	
+	\clearpage
+	
+	\chapter{Základní struktura}
+	\label{sec:zakladni_struktura}
+	
+	Tato kapitola se zabývá základní strukturou frontendu webové aplikace Fit Track a popisuje hlavní části projektu, ze kterých se aplikace skládá.
+	
+	\section{Struktura projektu ve Streamlitu}
+	\begin{itemize}
+		\item \textbf{static/} – adresář ve kterém jsou umístěné soubory css, pro tmavý režim stránky.
+		\item \textbf{streamlit\_app.py} – hlavní vstupní bod aplikace, tento skript vše odstartuje, stará se o úvodní nastavení stránky a propojuje jednotlivé moduly do jednoho celku
+		\item \textbf{pages\_dashboard.py} – logika pro vizualizaci tréninkových pokroků a generování interaktivních grafů, což je nejdůležitější část aplikace
+		\item \textbf{pages\_workouts.py} – správa tréninků, modul obsahující formuláře a rozhraní pro vkládání nových dat o cvičení, sériích a opakováních
+		\item \textbf{auth.py} – řeší logiku přihlašování uživatelů a zajišťuje, aby každý viděl pouze svá vlastní tréninková data
+		\item \textbf{requirements.txt} – seznam závislostí, který je zcela zásadní pro spustitelnost aplikace; obsahuje přesný výčet Python knihoven (jako Streamlit nebo Plotly), na kterých projekt stojí
+		\item \textbf{Dockerfile} – dokument, který umožňuje aplikaci "zabalit" do Dockeru, díky čemuž ji lze spustit na jakémkoliv počítači bez složitého instalování prostředí
+	\end{itemize}
+	
+	
+	\section{Autentizace (Google OAuth)}
+	Jednou z klíčových funkcí frontendu je zjednodušené přihlášení. Využila jsem protokol OAuth 2.0, který uživateli umožňuje přihlásit se pomocí Google účtu. To zvyšuje bezpečnost (uživatel nemusí zadávat heslo do mé aplikace) a výrazně urychluje proces registrace.
+
+	
+	Firestore umožňuje flexibilní ukládání dat a okamžitou synchronizaci, díky čemuž se změny projeví u trenéra i klienta bez nutnosti manuální obnovy stránky.
+	
+	
+	\chapter{Způsoby řešení a použité postupy}
+	Tato kapitola popisuje způsob vytvoření frontendu aplikace Fit Track, základní postupy vývoje v prostředí Streamlit, funkční mechanismy využité při implementaci, včetně autentizace uživatelů a komunikace s backendem přes API.
+	
+	\section{Založení projektu}
+	
+	Vývoj aplikace byl zahájen přípravou virtuálního prostředí v Pythonu a instalací frameworku Streamlit. Vzhledem k mým předchozím zkušenostem z výuky probíhal veškerý vývoj v editoru Visual Studio Code. Pro správu závislostí byl vytvořen soubor requirements.txt, který definuje potřebné knihovny, jako jsou Plotly pro grafy a Requests pro propojení s API. Celý frontend je také připraven pro kontejnerizaci pomocí přiloženého Dockerfile, což zajišťuje snadné spuštění aplikace v libovolném prostředí.
+    \pagebreak
+    
+    \section{Úvodní stránka}
+	
+	Úvodní strana aplikace FitTrack je navržena s důrazem na moderní vzhled, přehlednost a okamžitou srozumitelnost hlavních funkcí. Dominuje jí tmavý režim s výraznými žlutými akcenty, což odpovídá aktuálním trendům v oblasti fitness aplikací a zároveň snižuje únavu očí při používání v hůře osvětleném prostředí posiloven.
+    \vspace{18pt}
+	
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.9\textwidth]{image/hlavni.png}
+		\caption{Hlavní stránka}
+		\label{fig:main}
+	\end{figure}
+    \pagebreak
+	
+	\section{Autentizace a autorizace}
+	
+	Autentizace uživatelů je implementována v modulu auth.py. Aplikace umožňuje uživatelům bezpečné přihlášení, přičemž je kladen důraz na ochranu dat – každý sportovec má přístup pouze k vlastním záznamům. Po úspěšném ověření jsou přihlašovací údaje a tokeny uloženy v rámci \textttst{.session\_state}, což umožňuje aplikaci udržet uživatele přihlášeného i při pohybu mezi jednotlivými podstránkami, jako je deník tréninků nebo statistiky.
+
+    \vspace{18pt}
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.9\textwidth]{image/auth.png}
+		\caption{Proces autentizace uživatele v aplikaci Fit Track}
+		\label{fig:autentizace}
+	\end{figure}
+	
+	\pagebreak
+	
+	
+	\section{Uživatelské rozhraní}
+	
+	Po úspěšném přihlášení je uživatel přesměrován na hlavní přehledovou stránku (Dashboard), která slouží jako centrální uzel aplikace. Tato část byla navržena tak, aby poskytovala okamžitou zpětnou vazbu o aktivitě uživatele bez nutnosti složitého vyhledávání.
+    
+	\begin{itemize}
+		\item navigační panel (Sidebar)
+		\item přehledové metriky
+		\item šablony tréninků a Rychlý start
+	\end{itemize}
+	\vspace{18pt}
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.9\textwidth]{image/dash.png}
+		\caption{Dashboard}
+		\label{fig:dash}
+	\end{figure}
+	
+	\pagebreak
+	
+	\section{Statistiky}
+	
+	Dalsí funkcí aplikace FitTrack je modul pro analýzu dat, který je implementován v souboru \texttt{pages\_dashboard.py}. Cílem této části je poskytnout uživateli jasný přehled o jeho tréninkovém objemu a intenzitě pomocí interaktivních grafů.
+	\vspace{18pt}
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.9\textwidth]{image/stats.png}
+		\caption{Statistiky}
+		\label{fig:stats}
+	\end{figure}
+    	\subsection{Grafy}
+	
+	Pro vizualizaci jsem využila propojení Pythonu s knihovnou Plotly, což umožňuje generování responsivních grafů přímo v rozhraní Streamlit. V sekci „Analýza sérií a opakování“ aplikace zobrazuje dva klíčové pohledy:
+    	\begin{itemize}
+		\item Průměrný počet sérií (Top 10): Sloupcový graf zobrazuje průměrný objem sérií u nejčastěji vykonávaných cviků, jako jsou dřepy (Squats) nebo tlaky na lavici (Bench Press).
+		\item Průměrný počet opakování (Top 10): Tento graf doplňuje předchozí pohled o informaci o průměrném počtu opakování, což pomáhá uživateli sledovat, zda se pohybuje v zóně pro budování síly nebo vytrvalosti.
+	\end{itemize}
+	
+	
+	\subsection{Interaktivita a UX design}
+	
+	Grafy jsou plně interaktivní, což znamená, že uživatel může po najetí kurzorem na jednotlivé sloupce vidět přesné číselné hodnoty. Vizuální styl grafů byl upraven tak, aby doplňoval tmavý motiv aplikace – sloupce využívají modré odstíny, které jsou dobře čitelné na černém pozadí dashboardu.
+
+	\pagebreak
+
+    	\section{Úspěchy}
+	
+	Důležitou součástí uživatelského zážitku v aplikaci FitTrack je systém úspěchů, který je implementován jako samostatný modul přístupný z navigačního panelu. Tento systém sleduje aktivitu uživatele a automaticky odemyká odměny na základě dosažených milníků.
+
+    \vspace{18pt}
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.9\textwidth]{image/uspechy.png}
+		\caption{Úspěchy}
+		\label{fig:uspechy}
+	\end{figure}
+	
+	\pagebreak
+    
+	\section{Katalog cviků}
+	
+	Jednou z klíčových komponent pro usnadnění uživatelské zkušenosti je Katalog cviků, který slouží jako rozsáhlá databáze znalostí v rámci aplikace. Tato část umožňuje uživatelům nejen prohlížet dostupné cviky, ale také aktivně sestavovat vlastní tréninkové jednotky.
+	
+	\begin{itemize}
+		\item multiselect výběr
+		\item akční tlačítka
+		\item správa výběru
+	\end{itemize}
+	
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.9\textwidth]{image/katalog.png}
+		\caption{Katalog}
+		\label{fig:katalog}
+	\end{figure}
+	
+	\section{Záznamy tréninků}
+	
+	Uživatel může vytvářet nové záznamy, ukládat jejich průběh v reálném čase a zpětně k nim přistupovat skrze historii. Pro maximální efektivitu v posilovně jsem implementovala systém šablon (např. Push Day, Pull Day), které umožňují rychlý start tréninku bez nutnosti ručního zadávání každého cviku. Každý záznam tréninku v databázi obsahuje detailní informace o vykonaných cvicích, včetně počtu sérií, opakování a použité zátěže.
+
+	
+	\chapter{Výsledky řešení, výstupy a uživatelský manuál}
+	
+	\section{Výsledné řešení}
+	
+	Výsledkem práce je funkční webová aplikace FitTrack, která slouží jako moderní tréninkový deník pro záznam a analýzu fitness aktivit.
+	
+	\section{Splněné a nesplněné cíle}
+	
+	\textbf{Splněné cíle:}
+	
+	\begin{itemize}
+		\item Vytvoření přehledného katalogu cviků: Systém umožňuje filtrování cviků podle svalových skupin pro snadnou orientaci.
+		\item Možnost sestavovat tréninkové plány: Uživatel si může z katalogu vybrat konkrétní cviky a vytvořit si vlastní tréninkovou jednotku.
+		\item Efektivní správa tréninků: Díky systému šablon a funkci „Rychlý start“ je proces záznamu tréninku maximálně zjednodušen.
+		\item Přihlášení a autentizace: Zabezpečení přístupu je realizováno modulem auth.py, který zajišťuje ochranu uživatelských dat.
+		\item Pokročilá analýza dat: Implementace interaktivních grafů v knihovně Plotly umožňuje detailní sledování progresu v sériích a opakováních.
+		\item Responzivní uživatelské rozhraní: Aplikace postavená na frameworku Streamlit je plně dostupná skrze webový prohlížeč na počítačích i mobilních zařízeních.
+	\end{itemize}
+	
+	\textbf{Nesplněné cíle a možné rozšíření:}
+	
+	\begin{itemize}
+		\item Detailní nahrávání videí
+		\item Mobilní rozhraní a nativní aplikace
+	\end{itemize}
+	
+	
+	\chapter*{Závěr}
+	\addcontentsline{toc}{chapter}{Závěr}
+	
+Cílem této závěrečné práce bylo navrhnout a realizovat webovou aplikaci FitTrack, která poskytuje moderní a přehledné prostředí pro digitální správu tréninkového deníku a analýzu sportovních výkonů. Na základě provedené analýzy potřeb sportovců a následného návrhu v prostředí Visual Studio Code vznikla aplikace postavená na jazyce Python a frameworku Streamlit.
+
+Výsledné řešení splňuje většinu stanovených požadavků, zejména v oblasti interaktivní vizualizace dat pomocí knihovny Plotly, správy katalogu cviků a motivačního systému úspěchů. I přes určitá omezení v oblasti nativní mobilní platformy představuje FitTrack plně funkční a stabilní základ, který je díky své modulární struktuře a kontejnerizaci skrze Dockerfile připraven pro další rozšiřování a budoucí rozvoj.
+	
+	
+	\begin{thebibliography}{99}
+		
+		\bibitem{streamlitDocs}
+		\textit{Streamlit Documentation}.Main Concepts of Streamlit.[online]. Dostupné z: \url{https://docs.streamlit.io} [cit. 2025-09-25].
+		
+		\bibitem{python}
+		\textit{Python Software Foundation}.Python Language Reference.[online]. Dostupné z: \url{https://www.python.org/doc/} [cit. 2025-09-30].
+		
+		\bibitem{plotly}
+		\textit{Plotly}.Plotly Python Graphing Library.[online]. Dostupné z: \url{https://plotly.com/python/} [cit. 2025-10-08].
+		
+		\bibitem{streamlit}
+		\textit{Streamlit Docs}.Session State and Data Persistence.[online]. Dostupné z: \url{https://docs.streamlit.io/develop/api-reference/status/st.session_state} [cit. 2025-10-20].
+		
+		\bibitem{dockerDocs}
+		  \textit{Docker Documentation}.Dockerize a Python application.[online]. Dostupné z: \url{https://docs.docker.com/language/python/} [cit. 2025-10-28].
+		
+		\bibitem{vsCode}
+		Microsoft. \textit{Visual Studio Code}.Python Development Guide.[online]. Dostupné z: \url{https://code.visualstudio.com/docs/languages/python} [cit. 2025-11-16].
+		
+		\bibitem{streamlitApi}
+		\textit{Streamlit API}.Theming and Layout Customization.[online]. Dostupné z: \url{https://docs.streamlit.io/develop/api-reference/configuration/config.toml} [cit. 2025-11-22].
+		
+		\bibitem{plotlyDocs}
+		\textit{Plotly Docs}.Bar Charts and Statistical Visualizations in Python.[online]. Dostupné z: \url{https://plotly.com/python/bar-charts/} [cit. 2025-12-02].
+		
+		\bibitem{pyPip}
+		\textit{Python Pip}.Managing Dependencies with requirements.txt.[online]. Dostupné z: \url{https://pip.pypa.io/en/stable/user_guide/} [cit. 2025-12-13].
+		
+		\bibitem{docker}
+		\textit{Docker Docs}.Best practices for writing Dockerfiles.[online]. Dostupné z: \url{https://docs.docker.com/develop/develop-images/dockerfile_best-practices/} [cit. 2025-12-26].
+		
+		
+	\end{thebibliography}
+	
+	
+	%% obrázky 
+	\listoffigures
+	
+	%% tabulky
+	%\listoftables
+	
+	\appendix %% začínají přílohy
+	
+	\titleformat{\chapter}[block]{\scshape\bfseries\LARGE}{Příloha \thechapter}{10pt}{\vspace{0pt}}[\vspace{-22pt}] %% nastavení nadpisu u příloh
+	
+	
+	
+\end{document}
