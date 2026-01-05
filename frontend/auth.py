@@ -90,9 +90,12 @@ def initialize_session():
 def check_oauth_callback():
     """Check for Google OAuth callback and handle authentication."""
     try:
-        query_params = st.query_params
-    except AttributeError:
-        # Fallback for very old streamlit versions
+        # Try newer API first, fallback to experimental for older Streamlit
+        try:
+            query_params = st.query_params
+        except AttributeError:
+            query_params = st.experimental_get_query_params()
+    except Exception:
         query_params = {}
 
     if 'auth' in query_params:
@@ -102,12 +105,21 @@ def check_oauth_callback():
             auth_val = auth_val[0] if auth_val else None
 
         if auth_val == 'success':
-            # Get user_id from OAuth callback
+            # Get user_id from OAuth callback (Streamlit returns lists)
             user_id = query_params.get('user_id')
+            if isinstance(user_id, list):
+                user_id = user_id[0] if user_id else None
             
             # Clear query params first
             try:
+                # Try newer API first
                 st.query_params.clear()
+            except AttributeError:
+                # Fallback to experimental for older Streamlit
+                try:
+                    st.experimental_set_query_params()
+                except Exception:
+                    pass
             except Exception:
                 pass
             
@@ -115,21 +127,47 @@ def check_oauth_callback():
             if user_id:
                 session = st.session_state['session']
                 try:
-                    r = session.post(f"{API_BASE}/oauth/session", 
-                                   json={'user_id': user_id}, 
-                                   timeout=5)
+                    # Ensure we pass a simple scalar id
+                    payload_id = int(user_id) if isinstance(user_id, str) and user_id.isdigit() else user_id
+                    
+                    # Debug: log the request
+                    print(f"[OAuth] POSTing to /oauth/session with user_id={payload_id}")
+                    
+                    r = session.post(f"{API_BASE}/oauth/session",
+                                     json={'user_id': payload_id},
+                                     timeout=5)
+                    
+                    print(f"[OAuth] Response status: {r.status_code}")
+                    print(f"[OAuth] Response body: {r.text[:200]}")
+                    
                     if r.ok:
                         user_data = _safe_json(r)
                         st.session_state['logged_in'] = True
                         user_info = user_data.get('user', {})
                         st.session_state['user'] = user_info
-                        
+                        print(f"[OAuth] Session created for user: {user_info.get('username')}")
                         # Initialize goals for test user Emil
                         if user_info and user_info.get('username') == 'Emil':
                             if 'fitness_goals' not in st.session_state:
                                 from emil_goals import initialize_emil_goals
                                 st.session_state['fitness_goals'] = initialize_emil_goals()
-                        
+                        # Ensure the app shows the dashboard after OAuth
+                        st.session_state['page'] = 'dashboard'
+                        # Prevent the immediate global check_login() from overwriting this newly-created session
+                        st.session_state['skip_check_login'] = True
+
+                        # Clear query params in a Streamlit-compatible way
+                        try:
+                            # Preferred: use experimental_set_query_params to clear URL params
+                            st.experimental_set_query_params()
+                        except AttributeError:
+                            try:
+                                st.query_params.clear()
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+
                         st.success('Přihlášení přes Google úspěšné!')
                         st.rerun()
                         return
@@ -244,8 +282,16 @@ def login_page():
             submitted = st.form_submit_button('🔐 Přihlásit se', use_container_width=True, type="primary")
             
             if submitted:
-                if not username or not password:
-                    st.error('Vyplňte všechna pole')
+                # Validace prázdných polí
+                errors = []
+                if not username:
+                    errors.append('❌ Chybí vyplněné uživatelské jméno nebo email')
+                if not password:
+                    errors.append('❌ Chybí vyplněné heslo')
+                
+                if errors:
+                    for error in errors:
+                        st.error(error)
                 else:
                     try:
                         r = session.post(f"{API_BASE}/login", 
@@ -266,9 +312,13 @@ def login_page():
                             st.success('Úspěšně přihlášen!')
                             st.rerun()
                         else:
-                            _display_api_error(r)
+                            # Specifická chybová hláška pro nesprávné přihlašovací údaje
+                            if r.status_code == 401:
+                                st.error('❌ Nesprávné uživatelské jméno nebo heslo')
+                            else:
+                                _display_api_error(r)
                     except Exception as e:
-                        st.error('Nepodařilo se připojit k serveru')
+                        st.error('❌ Nepodařilo se připojit k serveru. Zkontrolujte připojení.')
 
         st.markdown("---")
         # Google OAuth
@@ -295,50 +345,145 @@ def login_page():
         # REGISTRATION FORM
         st.markdown('<div class="main-header">📝 Registrace</div>', unsafe_allow_html=True)
         
-        with st.form('register_form'):
-            username = st.text_input('Uživatelské jméno')
-            email = st.text_input('Email')
-            password = st.text_input('Heslo', type='password')
+        # Input fields OUTSIDE form for real-time validation feedback
+        username = st.text_input('Uživatelské jméno', key='reg_username')
+        email = st.text_input('Email', key='reg_email')
+        password = st.text_input('Heslo', type='password', key='reg_password')
+        
+        # Password strength indicator - updates in real-time
+        if password:
+            score, color, label, width = _password_strength(password)
+            st.markdown(f"""
+            <div style='margin: 10px 0;'>
+                <div style='font-size: 12px; margin-bottom: 5px;'>Síla hesla: <span style='color: {color}; font-weight: bold;'>{label}</span></div>
+                <div style='background: #333; border-radius: 10px; height: 8px; overflow: hidden;'>
+                    <div style='background: {color}; height: 100%; width: {width}; transition: all 0.3s;'></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Dynamické zobrazení požadavků na heslo s checkmarky - REAL-TIME
+        if password:
+            has_length = len(password) >= 8
+            has_upper = any(c.isupper() for c in password)
+            has_lower = any(c.islower() for c in password)
+            has_digit = any(c.isdigit() for c in password)
+            has_special = any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password)
             
-            # Password strength indicator
-            if password:
-                score, color, label, width = _password_strength(password)
-                st.markdown(f"""
-                <div style='margin: 10px 0;'>
-                    <div style='font-size: 12px; margin-bottom: 5px;'>Síla hesla: <span style='color: {color}; font-weight: bold;'>{label}</span></div>
-                    <div style='background: #333; border-radius: 10px; height: 8px; overflow: hidden;'>
-                        <div style='background: {color}; height: 100%; width: {width}; transition: all 0.3s;'></div>
+            requirements_html = f"""
+            <div style='background: #1a1a1a; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #ffd700;'>
+                <div style='font-weight: bold; margin-bottom: 12px; color: #ffd700;'>📋 Požadavky na heslo:</div>
+                <div style='margin-left: 0;'>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>{'✅' if has_length else '❌'}</span>
+                        <span style='color: {"#4ade80" if has_length else "#cccccc"};'>Minimálně 8 znaků</span>
+                    </div>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>{'✅' if has_upper else '❌'}</span>
+                        <span style='color: {"#4ade80" if has_upper else "#cccccc"};'>Alespoň jedno velké písmeno (A-Z)</span>
+                    </div>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>{'✅' if has_lower else '❌'}</span>
+                        <span style='color: {"#4ade80" if has_lower else "#cccccc"};'>Alespoň jedno malé písmeno (a-z)</span>
+                    </div>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>{'✅' if has_digit else '❌'}</span>
+                        <span style='color: {"#4ade80" if has_digit else "#cccccc"};'>Alespoň jedna číslice (0-9)</span>
+                    </div>
+                    <div style='display: flex; align-items: center;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>{'✅' if has_special else '❌'}</span>
+                        <span style='color: {"#4ade80" if has_special else "#cccccc"};'>Alespoň jeden speciální znak (!@#$%^&*)</span>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
-
-            password2 = st.text_input('Potvrzení hesla', type='password')
-            submitted = st.form_submit_button('📝 Registrovat se', use_container_width=True, type="primary")
+            </div>
+            """
+            st.markdown(requirements_html, unsafe_allow_html=True)
+        else:
+            # Zobrazení výchozího stavu před zadáním hesla
+            st.markdown("""
+            <div style='background: #1a1a1a; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #ffd700;'>
+                <div style='font-weight: bold; margin-bottom: 12px; color: #ffd700;'>📋 Požadavky na heslo:</div>
+                <div style='margin-left: 0;'>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>⬜</span>
+                        <span style='color: #cccccc;'>Minimálně 8 znaků</span>
+                    </div>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>⬜</span>
+                        <span style='color: #cccccc;'>Alespoň jedno velké písmeno (A-Z)</span>
+                    </div>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>⬜</span>
+                        <span style='color: #cccccc;'>Alespoň jedno malé písmeno (a-z)</span>
+                    </div>
+                    <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>⬜</span>
+                        <span style='color: #cccccc;'>Alespoň jedna číslice (0-9)</span>
+                    </div>
+                    <div style='display: flex; align-items: center;'>
+                        <span style='font-size: 18px; margin-right: 10px;'>⬜</span>
+                        <span style='color: #cccccc;'>Alespoň jeden speciální znak (!@#$%^&*)</span>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        password2 = st.text_input('Potvrzení hesla', type='password', key='reg_password2')
+        
+        # Submit button
+        if st.button('📝 Registrovat se', use_container_width=True, type="primary", key='register_submit'):
+            # Detailní validace všech polí
+            errors = []
             
-            if submitted:
-                if not all([username, email, password, password2]):
-                    st.error('Vyplňte všechna pole')
-                elif password != password2:
-                    st.error('Hesla se neshodují')
-                elif len(password) < 8:
-                    st.error('Heslo musí mít alespoň 8 znaků')
-                else:
-                    try:
-                        r = session.post(f"{API_BASE}/register", 
-                                       json={
-                                           'username': username, 
-                                           'email': email, 
-                                           'password': password
-                                       }, 
-                                       timeout=5)
-                        if r.ok:
-                            st.session_state['registration_success'] = True
-                            st.session_state['show_register_form'] = False
-                            st.rerun()
-                        else:
-                            _display_api_error(r)
-                    except Exception as e:
-                        st.error('Nepodařilo se připojit k serveru')
+            if not username:
+                errors.append('❌ Chybí vyplněné uživatelské jméno')
+            elif len(username) < 3:
+                errors.append('❌ Uživatelské jméno musí mít alespoň 3 znaky')
+            
+            if not email:
+                errors.append('❌ Chybí vyplněný email')
+            elif '@' not in email or '.' not in email:
+                errors.append('❌ Neplatný formát emailu')
+            
+            if not password:
+                errors.append('❌ Chybí vyplněné heslo')
+            else:
+                if len(password) < 8:
+                    errors.append('❌ Heslo musí mít alespoň 8 znaků')
+                if not any(c.isupper() for c in password):
+                    errors.append('❌ Heslo musí obsahovat alespoň jedno velké písmeno')
+                if not any(c.islower() for c in password):
+                    errors.append('❌ Heslo musí obsahovat alespoň jedno malé písmeno')
+                if not any(c.isdigit() for c in password):
+                    errors.append('❌ Heslo musí obsahovat alespoň jednu číslici')
+                if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password):
+                    errors.append('❌ Heslo musí obsahovat alespoň jeden speciální znak (!@#$%^&*)')
+            
+            if not password2:
+                errors.append('❌ Chybí vyplněné potvrzení hesla')
+            elif password != password2:
+                errors.append('❌ Hesla se neshodují')
+            
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                try:
+                    r = session.post(f"{API_BASE}/register", 
+                                   json={
+                                       'username': username, 
+                                       'email': email, 
+                                       'password': password
+                                   }, 
+                                   timeout=5)
+                    if r.ok:
+                        st.session_state['registration_success'] = True
+                        st.session_state['show_register_form'] = False
+                        st.rerun()
+                    else:
+                        _display_api_error(r)
+                except Exception as e:
+                    st.error('Nepodařilo se připojit k serveru')
         
         # Link to login
         st.markdown("<br>", unsafe_allow_html=True)

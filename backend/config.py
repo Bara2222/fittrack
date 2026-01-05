@@ -8,6 +8,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _read_secret_file(path: str) -> str | None:
+    """Read a secret from a file path; return stripped content or None."""
+    try:
+        if path and os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                return f.read().strip()
+    except Exception:
+        pass
+    return None
+
 class Config:
     """Base configuration"""
     # Security
@@ -23,11 +34,16 @@ class Config:
     WTF_CSRF_ENABLED = True
     
     # CORS
-    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:8501,http://127.0.0.1:8501').split(',')
+    # Allow spaces in .env values and ignore empty entries
+    _cors = os.getenv('CORS_ORIGINS', 'http://localhost:8501,http://127.0.0.1:8501')
+    CORS_ORIGINS = [o.strip() for o in _cors.split(',') if o.strip()]
     
     # OAuth
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-    GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+    # Prefer explicit env var, then a file path in GOOGLE_CLIENT_SECRET_FILE, then `/run/secrets/google_client_secret`.
+    _gcs_env = os.getenv('GOOGLE_CLIENT_SECRET')
+    _gcs_file = os.getenv('GOOGLE_CLIENT_SECRET_FILE') or '/run/secrets/google_client_secret'
+    GOOGLE_CLIENT_SECRET = _gcs_env or _read_secret_file(_gcs_file)
     
     # URLs for OAuth redirects
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:8501')

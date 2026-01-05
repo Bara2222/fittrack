@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: fittrack_backend
+    env_file:
+      - .env
     ports:
       - "5000:5000"
     environment:
@@ -11,13 +13,14 @@ services:
       - PORT=5000
       - DATABASE_URL=sqlite:////app/instance/db.sqlite3
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - SECRET_KEY=${SECRET_KEY:-development-secret-key}
       - PYTHONPATH=/app
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8501}
       - BACKEND_URL=${BACKEND_URL:-http://localhost:5000}
     volumes:
       - ./instance:/app/instance
+    secrets:
+      - google_client_secret
     networks:
       - fittrack_network
     restart: unless-stopped
@@ -45,3 +48,7 @@ services:
 networks:
   fittrack_network:
     driver: bridge
+
+secrets:
+  google_client_secret:
+    file: .secrets/google_client_secret

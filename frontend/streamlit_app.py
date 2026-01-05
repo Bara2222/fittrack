@@ -23,6 +23,18 @@ st.set_page_config(
 
 # Initialize session and authentication
 initialize_session()
+
+# Debug: log query params to see what we're working with
+try:
+    try:
+        qp = st.query_params
+    except AttributeError:
+        qp = st.experimental_get_query_params()
+    if 'auth' in qp:
+        print(f"[App] Query params detected: {dict(qp)}")
+except Exception as e:
+    print(f"[App] Could not read query params: {e}")
+
 check_oauth_callback()
 
 # Apply global CSS styles
@@ -60,8 +72,16 @@ div[class*="status"]:contains("Running") {
 # Get current page from session state
 current_page = st.session_state.get('page', 'landing')
 
-# Check if user is logged in
-if not check_login():
+# Decide whether to call the remote /me check or rely on session state set by OAuth
+# If `skip_check_login` is set by `check_oauth_callback`, use the state prepared there and
+# avoid calling `check_login()` which may clear the freshly-created session in the same run.
+skip = st.session_state.pop('skip_check_login', False)
+if not skip:
+    logged = check_login()
+else:
+    logged = st.session_state.get('logged_in', False)
+
+if not logged:
     # Not logged in - hide sidebar and show landing page with footer
     st.markdown("""
     <style>
@@ -73,7 +93,7 @@ if not check_login():
     }
     </style>
     """, unsafe_allow_html=True)
-    
+
     landing_page()
 else:
     # Logged in - show app content with sidebar and WITHOUT footer

@@ -17,6 +17,9 @@ env/
 # But keep .env.example as template
 !.env.example
 
+# Local secrets directory (contains secret files for Docker Compose)
+.secrets/
+
 # SQLite
 *.sqlite3
 *.sqlite3.*

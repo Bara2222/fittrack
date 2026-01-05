@@ -117,6 +117,39 @@ def login():
         return jsonify({'ok': False, 'error': 'Došlo k chybě při přihlašování. Zkuste to prosím znovu.'}), 500
 
 
+
+@api_bp.route('/oauth/session', methods=['POST'])
+def create_oauth_session():
+    """Create a server-side session for a given user_id (used by frontend OAuth callback).
+
+    This endpoint allows the frontend to ask the backend to call Flask-Login's
+    `login_user()` for the provided user id so the backend sets the session cookie
+    and subsequent `/me` requests succeed.
+    """
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        if user_id is None:
+            return _json_err('user_id is required', 400)
+
+        # Accept numeric or string IDs
+        try:
+            user_id_int = int(user_id)
+        except Exception:
+            return _json_err('Invalid user_id', 400)
+
+        user = User.query.get(user_id_int)
+        if not user:
+            return _json_err('User not found', 404)
+
+        login_user(user)
+        logger.info(f'OAuth session created for user id: {user_id_int}')
+        return jsonify({'ok': True, 'user': user.to_dict(include_sensitive=True)})
+    except Exception as e:
+        logger.error(f'Error creating oauth session: {str(e)}')
+        return jsonify({'ok': False, 'error': 'Failed to create session'}), 500
+
+
 @api_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
@@ -547,22 +580,27 @@ def oauth_session():
         user_id = data.get('user_id')
         
         if not user_id:
+            logger.warning('OAuth session: missing user_id')
             return jsonify({'ok': False, 'error': 'User ID required'}), 400
             
         user = User.query.get(user_id)
         if not user:
+            logger.warning(f'OAuth session: user {user_id} not found')
             return jsonify({'ok': False, 'error': 'User not found'}), 404
             
         # Log the user in for this session
         login_user(user, remember=True)
+        logger.info(f'OAuth session created for user: {user.username} (id={user.id})')
         
         return jsonify({
             'ok': True,
-            'user': user.to_dict()
+            'user': user.to_dict(include_sensitive=True)
         })
         
     except Exception as e:
         logger.error(f'OAuth session error: {str(e)}')
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 

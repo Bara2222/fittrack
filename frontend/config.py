@@ -552,6 +552,14 @@ div[class*="select"] {
     letter-spacing: 0.5px;
 }
 
+/* Sidebar - dark theme background */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] {
+    background: var(--surface) !important;
+    background-color: #0a0a0a !important;
+}
+
 /* Sidebar elements */
 [data-testid="stSidebar"] .stButton>button{
     width:100%;
@@ -574,6 +582,12 @@ div[class*="select"] {
 /* Animated Stat boxes with Progress Rings */
 .stat-box{
     background: rgba(0, 0, 0, 0.8);
+
+/* Ensure the sidebar background matches theme (avoid white default) */
+[data-testid="stSidebar"] {
+    background: var(--surface) !important;
+    color: var(--text-primary) !important;
+}
     backdrop-filter: blur(10px);
     color: var(--text-primary);
     padding:40px;
