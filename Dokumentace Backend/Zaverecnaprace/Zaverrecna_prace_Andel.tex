@@ -1,0 +1,670 @@
+% ŠABLONA PRO PSANÍ ZÁVĚREČNÉ STUDIJNÍ PRÁCE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Autor šablony: Jakub Dokulil, upraveno pro FitTrack Backend
+%
+\documentclass[12pt, a4paper,
+oneside,      
+]{report}
+
+%% Nutné balíčky a nastavení
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% OPRAVA CMAP WARNING: cmap musí být načten před fontenc
+\usepackage{cmap} 
+\usepackage[czech]{babel} 
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}
+
+%% Proměnné - ÚDAJE
+\newcommand\obor{INFORMAČNÍ TECHNOLOGIE} 
+\newcommand\kodOboru{18-20-M/01} 
+\newcommand\zamereni{se zaměřením na počítačové sítě a programování} 
+\newcommand\skola{Střední škola průmyslová a umělecká, Opava} 
+\newcommand\trida{IT4} 
+\newcommand\jmenoAutora{David Anděl}  
+\newcommand\skolniRok{2025/26} 
+\newcommand\datumOdevzdani{1. 1. 2026} 
+\newcommand\nazevPrace{Webová aplikace pro zaznamenávání tréninků a výkonů(Backend část)} 
+
+\title{\nazevPrace} 
+\author{\jmenoAutora} 
+\date{\datumOdevzdani} 
+
+\usepackage[top=2.5cm, bottom=2.5cm, left=3.5cm, right=1.5cm]{geometry} 
+
+\usepackage{graphicx} 
+\usepackage{subcaption} 
+\usepackage{hyperref} 
+\usepackage{listings}
+\usepackage{xcolor}
+
+
+% Konfigurace pro listings - hezké zobrazení kódu
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b
+}
+
+% Nastavení řádkování a odstavců pro lepší zarovnání textu
+\linespread{1.25} 
+\setlength{\parskip}{0.5em} 
+\setlength{\parindent}{1.25cm} 
+
+\usepackage[pagestyles]{titlesec} 
+\titleformat{\chapter}[block]{\scshape\bfseries\LARGE}{\thechapter}{10pt}{\vspace{0pt}}[\vspace{-22pt}]
+\titleformat{\section}[block]{\scshape\bfseries\Large}{\thesection}{10pt}{\vspace{0pt}}
+\titleformat{\subsection}[block]{\bfseries\large}{\thesubsection}{10pt}{\vspace{0pt}}
+
+\usepackage{tocloft} 
+\setlength{\cftbeforechapskip}{0pt}  
+\setlength{\cftbeforesecskip}{0pt}   
+
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2} % Zobrazovat i podkapitoly v obsahu
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0.025pt}
+
+% Nastavení výšky záhlaví
+\setlength{\headheight}{16pt}
+
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{pdfpages} 
+\usepackage{upgreek} 
+\usepackage{amsmath}    
+\usepackage{amsfonts}   
+\usepackage{esint}     
+\usepackage{mathrsfs}
+\usepackage{helvet} 
+\usepackage{mathptmx} 
+
+% Barvy pro kód
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{mediumgray}{rgb}{0.3, 0.4, 0.4}
+\definecolor{mediumblue}{rgb}{0.0, 0.0, 0.8}
+\definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
+\definecolor{darkviolet}{rgb}{0.58, 0.0, 0.83}
+\definecolor{royalblue}{rgb}{0.25, 0.41, 0.88}
+\definecolor{crimson}{rgb}{0.86, 0.8, 0.24}
+
+\renewcommand{\lstlistingname}{Kód}
+\renewcommand{\lstlistlistingname}{Seznam programových kódů}
+
+% Nastavení pro Python
+\lstdefinestyle{Python}{
+	language=Python,
+	backgroundcolor=\color{white},
+	basicstyle=\ttfamily\small,
+	breakatwhitespace=false,
+	breaklines=true,
+	captionpos=b,
+	columns=fullflexible,
+	commentstyle=\color{mediumgray}\upshape,
+	emph={},
+	emphstyle=\color{crimson},
+	extendedchars=true,
+	fontadjust=true,
+	frame=single,
+	identifierstyle=\color{black},
+	keepspaces=true,
+	keywordstyle=\color{mediumblue},
+	keywordstyle={[2]\color{darkviolet}},
+	keywordstyle={[3]\color{royalblue}},
+	literate=%
+	{á}{{\'a}}1 {č}{{\v{c}}}1 {ď}{{\v{d}}}1 {é}{{\'e}}1 {ě}{{\v{e}}}1
+	{í}{{\'i}}1 {ň}{{\v{n}}}1 {ó}{{\'o}}1 {ř}{{\v{r}}}1 {š}{{\v{s}}}1
+	{ť}{{\v{t}}}1 {ú}{{\'u}}1 {ů}{{\r{u}}}1 {ý}{{\'y}}1 {ž}{{\v{z}}}1,		
+	numbers=left,
+	numbersep=5pt,
+	numberstyle=\tiny\color{black},
+	rulecolor=\color{black},
+	showlines=true,
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+	stringstyle=\color{forestgreen},
+	tabsize=4,
+	title=\lstname,
+	upquote=true
+}
+
+% ===============================
+% Záhlaví a zápatí
+% ===============================
+\fancyhf{}   
+\fancyhead[L]{Závěrečná práce}
+\fancyhead[C]{\jmenoAutora\ \trida}
+\fancyhead[R]{2025/2026}
+\fancyfoot[C]{\thepage}
+
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Styl pro kapitoly (\chapter)
+\fancypagestyle{plain}{
+	\fancyhf{}
+	\fancyhead[L]{Závěrečná práce}
+	\fancyhead[C]{\jmenoAutora\ \trida}
+	\fancyhead[R]{2025/2026}
+	\fancyfoot[C]{\thepage}
+	\renewcommand{\headrulewidth}{0.4pt}
+}
+
+%% Začátek dokumentu
+%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+	
+	\pagestyle{empty}
+	\pagenumbering{Roman}
+	\pagenumbering{gobble} 
+	
+	%% Titulní stránka
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	{\fontfamily{phv}\selectfont
+		%% Logo školy
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=0.6\linewidth]{image/logo-skoly.png} 
+		\end{figure}
+		
+		{\bfseries 
+			\begin{center}
+				\vspace{0.025 \textheight}
+				\LARGE{ZÁVĚREČNÁ STUDIJNÍ PRÁCE}\\
+				\large{dokumentace}\\
+				\vspace{0.075 \textheight}
+				\LARGE {\nazevPrace}\\
+			\end{center}  
+		}
+		
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=0.4\linewidth]{image/logo.png} 
+		\end{figure}
+		
+		\vspace{0.02 \textheight}
+		\begin{table}[h!]
+			\begin{tabular}{ll}
+				\textbf{Autor:} & \jmenoAutora\\ 
+				\textbf{Obor:} & \kodOboru { } \obor\\
+				\textbf{} & \zamereni\\
+				\textbf{Třída:} & \trida\\
+				\textbf{Školní rok:} & \skolniRok\\
+			\end{tabular}
+			
+		\end{table}		
+	}
+	
+	\clearpage 
+	
+	%% Poděkování a prohlášení
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	\noindent{\large{\bfseries{Poděkování}\\}}
+	\noindent Rád bych tímto poděkoval pánům učitelům Ing. Petru Grussmannovi a Mgr. Marku Lučnému za jejich cenné rady, odborné připomínky a za pomoc s backendovou částí projektu. Děkuji zejména za konzultace týkající se návrhu databázové struktury a zabezpečení API rozhraní, které byly klíčové pro úspěšnou realizaci této práce.
+	\vspace*{0.65\textheight} 
+	
+	\noindent{\large{\bfseries{Prohlášení}\\}} 
+	\noindent{Prohlašuji, že jsem závěrečnou práci vypracoval samostatně a uvedl veškeré použité informační zdroje.\\}
+	\noindent{Souhlasím, aby tato studijní práce byla použita k výukovým a prezentačním účelům na Střední průmyslové a umělecké škole v Opavě, Praskova 399/8.}
+	\vfill
+	\noindent{V Opavě \datumOdevzdani\\}
+	\noindent
+	\begin{minipage}{\linewidth}
+		\hspace{9.5cm} 
+		\begin{tabular}{@{}p{6cm}@{}}
+			\dotfill \\
+			Podpis autora
+		\end{tabular}
+	\end{minipage}
+    \vspace{20pt}
+	
+	
+	%% Abstrakt
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
+	
+	\noindent{\Large{\bfseries{Abstrakt}\\}}
+	\noindent Předmětem této dokumentace je backendová část webové aplikace Fit Track, která slouží jako robustní serverové řešení pro moderní fitness deník. Systém je navržen jako RESTful API postavené na mikro-frameworku Flask v jazyce Python, což zajišťuje vysokou flexibilitu a rychlost odezvy. Aplikace komplexně zajišťuje správu uživatelských účtů, bezpečnou autentizaci (včetně integrace protokolu OAuth 2.0 pro přihlášení přes Google) a strukturovanou evidenci tréninkových dat.
+	
+	Data jsou ukládána do relační databáze s využitím pokročilého ORM SQLAlchemy, což umožňuje efektivní práci s daty a ochranu proti bezpečnostním hrozbám. Důraz byl kladen na škálovatelnost, čistotu kódu a oddělení aplikační logiky od datové vrstvy. Projekt je plně kontejnerizován pomocí nástroje Docker pro zajištění konzistentního běhového prostředí a využívá nástroj Alembic pro automatizovanou správu databázových migrací.
+	
+	\vspace{20pt}
+	
+	\noindent{\large{\bfseries Klíčová slova}}\\
+	backend, REST API, Flask, Python, SQLAlchemy, Docker, Google OAuth, relační databáze, ORM, kontejnerizace
+	
+	\vspace{20pt}
+	
+	\noindent{\Large{\bfseries{Abstract}}}
+	\noindent This documentation focuses on the backend part of the Fit Track web application, serving as a robust server-side solution for a modern fitness diary. The system is designed as a RESTful API built on the Flask micro-framework using Python, ensuring high flexibility and response speed. The application comprehensively handles user account management, secure authentication (including OAuth 2.0 integration for Google login), and structured training data recording.
+	
+	Data are stored in a relational database using the advanced SQLAlchemy ORM, enabling efficient data manipulation and protection against security threats. Emphasis was placed on scalability, code cleanliness, and the separation of application logic from the data layer. The project is fully containerized using Docker to ensure a consistent runtime environment and utilizes the Alembic tool for automated database migration management.
+	
+	\vspace{25pt}
+	
+	\noindent{\large{\bfseries{Keywords}}}
+	backend, REST API, Flask, Python, SQLAlchemy, Docker, Google OAuth, relational database, ORM, containerization
+
+    \vspace{20pt}
+	
+	\tableofcontents 
+	
+	\clearpage
+	
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	\pagestyle{fancy}
+	\vspace{20pt}
+	
+	%% Úvod
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
+	\chapter{Úvod}
+	\addcontentsline{toc}{chapter}{Úvod}
+	
+	V dnešní digitální době, kdy je kladen stále větší důraz na zdravý životní styl a kvantifikaci osobních výkonů, rostou i nároky na softwarová řešení, která tato data zpracovávají. Moderní webové aplikace vyžadují robustní, bezpečnou a spolehlivou serverovou část, která je schopna efektivně zpracovávat požadavky uživatelů a bezpečně spravovat citlivá data. Backend aplikace Fit Track byl navržen s cílem vytvořit stabilní a škálovatelný základ pro fitness deník, který bude fungovat nezávisle na klientské platformě.
+	
+    Na vývoji tohoto projektu jsem pracoval na backendove části, zatímco frontendovou část vytvořila má spolužačka Barbora Žemličková.
+
+	Mým hlavním úkolem bylo navrhnout a implementovat REST API rozhraní, které slouží jako univerzální prostředník mezi databází a uživatelským rozhraním. Backend řeší komplexní logiku registrace a přihlašování uživatelů, přičemž klade důraz na moderní standardy, jako je využití protokolu OAuth 2.0 pro ověření identity přes účet Google. Dále systém zajišťuje veškeré operace s tréninkovými daty – od vytváření nových záznamů, přes jejich čtení a analýzu, až po aktualizaci a mazání.
+	
+	Pro realizaci tohoto projektu jsem zvolil programovací jazyk Python ve spojení s frameworkem Flask. Tato kombinace nabízí ideální poměr mezi výkonem, rychlostí vývoje a přehledností kódu. Nedílnou součástí práce byl také návrh optimalizovaného databázového modelu pomocí knihovny SQLAlchemy a příprava prostředí pro nasazení pomocí technologie Docker. Tato dokumentace podrobně popisuje architekturu systému, použitá technologická řešení, strukturu API a metodiku vývoje.
+
+	\section{Motivace a cíle práce}
+	Hlavní motivací pro vytvoření vlastního backendového řešení byla potřeba mít plnou kontrolu nad strukturou dat a způsobem jejich zpracování. Mnoho existujících fitness aplikací funguje jako uzavřené systémy, které neumožňují snadný export dat nebo integraci s jinými nástroji. Cílem této práce bylo vytvořit otevřené API, které umožní bezpečné ukládání dat a zároveň poskytne flexibilitu pro budoucí rozvoj, například připojení mobilní aplikace nebo pokročilých analytických nástrojů.
+\vspace{20pt}
+
+
+\subsection{Problematika sledování fitness dat}
+V dnešní době existuje na trhu značné množství fitness aplikací, avšak mnohé z nich trpí několika zásadními nedostatky. Komercializované řešení jako MyFitnessPal, Strava nebo Fitbit představují uzavřené ekosystémy, které ukladají uživatelská data na vlastních serverech bez možnosti plné kontroly nad nimi. To vázností ohrožuje soukromí uživatelů a vytváří závislost na jediném poskytovateli služeb.
+
+Dalším problémem je nedostatečná flexibilita při záznamu specifických druhů tréninků. Silovy trénink vyžaduje detailní evidenci počtu serií, opakování a použitých zatížení pro každý cvik zvlášť. Stávající řešení často předpokládají univerzální přístup vhodný spíše pro aerobní aktivity (běh, jízda na kole), což je pro pokročilé kulturisty a silové sportovce nedostačující.
+
+\subsection{Přínos vlastního řešení}
+Vlastní backend Fit Track byl proto navržen jako flexibilní a rozšiřitelné API, které přesně odpovídá potřebám silového tréninku. Open-source povaha projektu umožňuje uživatelům nezávislou kontrolu nad svými daty – aplikaci mohou hostovat na vlastním serveru nebo používat lokálně bez připojení k internetu. Takováto autonomie odpovídá současným požadavkům na ochranu osobních dat v souladu s GDPR.
+
+    \section{Struktura dokumentace}
+    Práce je rozdělena do logických celků. První část se věnuje teoretickým východiskům a výběru technologií. Následuje detailní popis architektury a databázového modelu. Další kapitoly se zaměřují na samotnou implementaci API, zabezpečení a finálně na nasazení aplikace pomocí kontejnerizace.
+
+	\chapter{Teoretická východiska a technologie}
+    
+    Výběr technologií pro backend byl pečlivě zvážen a podřízen požadavkům na rychlost vývoje, bezpečnost, stabilitu a snadnou údržbu kódu.
+
+    \section{Programovací jazyk Python}
+	Jako hlavní programovací jazyk byl zvolen Python ve verzi 3.13, a to především pro jeho výbornou čitelnost, rozsáhlou komunitu a dostupnost kvalitních knihoven pro webový vývoj. Python je dynamicky typovaný jazyk, který umožňuje velmi efektivní psaní kódu, což urychluje proces od návrhu k funkčnímu prototypu. Pro webové aplikace nabízí robustní frameworky i lehké nástroje pro tvorbu mikroslužeb.
+
+    \section{Framework Flask}
+    Pro webovou vrstvu jsem zvolil Flask. Jedná se o tzv. mikro-framework, který na rozdíl od robustnějších řešení (jako je například Django) nevnucuje vývojáři pevnou strukturu projektu ani nadbytečné závislosti. 
+    
+    \subsection{Výhody mikro-frameworku}
+    Flask poskytuje pouze základní nástroje pro běh webového serveru a zpracování HTTP požadavků (routing), což mi umožnilo navrhnout architekturu přesně podle specifických potřeb aplikace Fit Track. Díky této flexibilitě jsem mohl snadno integrovat pouze ty komponenty, které byly skutečně potřeba, což vede k menší režii a vyššímu výkonu.
+
+\subsection{Routing a dekorátory}
+Jednou z nejvíce oceňovaných vlastností Flasku je jednoduchý routovací systém. Každá cesta (route) se definuje pomocí dekorátoru \texttt{@app.route()}, což činí kód přehledným a samopopisným. Například endpoint pro získání seznamu tréninků může vypadat takto:
+
+\begin{lstlisting}[language=Python]
+@app.route('/api/workouts', methods=['GET'])
+@login_required
+def get_workouts():
+    workouts = Workout.query.filter_by(
+        user_id=current_user.id
+    ).all()
+    return jsonify([w.to_dict() for w in workouts])
+\end{lstlisting}
+
+Tento přístup umožňuje intuitivní definici API endpointů bez nutné konfigurace externích routing souborů. Dekorátory jako \texttt{@login\_required} dále zlepšují čitelnost a umožňují snadné přidávání middleware logiky.
+
+\subsection{Rozšíření a ekosystém}
+Flask disponuje rozsahlým ekosystémem rozšíření (extensions), které pokrývají běžné potřeby webových aplikací. V projektu Fit Track jsou využita mimo jiné tato rozšíření:
+
+\begin{itemize}
+    \item \textbf{Flask-SQLAlchemy} – integrace databázového ORM s Flask aplikací
+    \item \textbf{Flask-Login} – správa uživatelských relací a autentizace
+    \item \textbf{Flask-Migrate} – podpora databázových migrací pomocí Alembic
+    \item \textbf{Flask-CORS} – konfigurace Cross-Origin Resource Sharing pro komunikaci s frontendem
+\end{itemize}
+
+Všechna tato rozšíření jsou aktivně udržována komunitou a poskytují konzistentní rozhraní, které dobře zapadají do Flask filozofie.
+
+    \section{SQLAlchemy a Alembic}
+	Práce s databází je řešena pomocí SQLAlchemy, což je v současnosti nejpoužívanější ORM (Object Relational Mapper) nástroj pro Python. ORM umožňuje pracovat s databázovými tabulkami jako s běžnými Python objekty (třídami). 
+    
+    \subsection{Správa migrací}
+    Pro správu změn v databázovém schématu v průběhu času je použit nástroj Alembic. Ten generuje migrační skripty, které zajišťují, že databáze je vždy synchronizovaná s kódem aplikace, a umožňuje bezpečné nasazení změn do produkce bez ztráty dat.
+
+
+\subsection{Pokročilé možnosti SQLAlchemy}
+SQLAlchemy nabízí řadu pokročilých funkcí, které byly využity v projektu:
+
+\textbf{Lazy loading vs. Eager loading:} Vztahy mezi entitami mohou být načítány buď línivě (lazy) nebo dychtivě (eager). Například při získávání tréninku s všemi cviky používáme eager loading, aby se předešlo problému N+1 dotazů:
+
+\begin{lstlisting}[language=Python]
+workout = Workout.query.options(
+    joinedload(Workout.exercises)
+).filter_by(id=workout_id).first()
+\end{lstlisting}
+
+\textbf{Hybridní vlastnosti:} ORM umožňuje definovat počítané vlastnosti, které fungují jak na úrovni instance, tak v SQL dotazech. Například celkový objem tréninku může být počítán automaticky.
+
+\textbf{Transakce a rollback:} Veškeré modifikace dat probíhají v rámci transakcí. Pokud dojde k chybě při ukládání několika provazovaných záznamů, všechny zmeny se automaticky vrátí zpět (rollback), což zabraňuje nekonzistentnímu stavu databáze.
+    \section{Docker a kontejnerizace}
+    Pro zajištění konzistentního prostředí mezi vývojem a produkcí je celá aplikace kontejnerizována pomocí nástroje Docker. To eliminuje problémy typu "u mě to funguje", protože aplikace běží v izolovaném prostředí s přesně definovanými závislostmi.
+
+	\chapter{Návrh architektury a databáze}
+	\label{sec:architektura}
+	
+	Architektura backendu byla navržena s důrazem na modularitu a oddělení zodpovědností (Separation of Concerns). To zajišťuje přehlednost kódu a usnadňuje budoucí rozšiřování aplikace.
+
+    \section{Struktura projektu}
+    Projekt je organizován do logických celků:
+	\begin{itemize}
+		\item \textbf{Modul aplikace (app.py):} Obsahuje tovární funkci pro inicializaci.
+		\item \textbf{API Routes (api\_routes.py):} Definuje endpointy a logiku zpracování požadavků.
+		\item \textbf{Databázové modely (database\_models.py):} Definuje strukturu dat.
+		\item \textbf{Konfigurace (config.py):} Spravuje proměnné prostředí a nastavení.
+	\end{itemize}
+
+    \section{Databázový model}
+    Data jsou strukturována do relační databáze, která zajišťuje integritu a efektivní dotazování. Schéma se skládá ze tří hlavních entit.
+    
+    \subsection{Entita User (Uživatel)}
+    Centrální entita systému. Uchovává přihlašovací údaje (hash hesla), kontaktní email a volitelně data získaná z Google profilu (např. ID uživatele). Model také obsahuje základní tělesné metriky uživatele, jako je věk, výška a váha.
+    
+    \subsection{Entita Workout (Trénink)}
+    Představuje jeden tréninkový den nebo jednotku. Tato entita je vázána na konkrétního uživatele (relace 1:N) a obsahuje datum tréninku a volitelnou textovou poznámku.
+    
+    \subsection{Entita WorkoutExercise (Cvik)}
+    Představuje konkrétní cvik provedený v rámci tréninku. Obsahuje název cviku, počet sérií, počet opakování a použitou váhu. Je vázán na entitu Workout (relace 1:N). Důležitým prvkem je nastavení tzv. kaskádního mazání – při smazání tréninku se automaticky odstraní i všechny jeho cviky.
+
+\subsection{Relační integrita a constraints}
+Ve všech entitách jsou definovány omezení (constraints), které zajistí konzistenci dat. Složený primarní klíč v tabulce \texttt{workout\_exercises} zabraňuje duplicitním záznamům pro stejný cvik ve stejném tréninku. Foreign key omezení s nastaveným \texttt{ON DELETE CASCADE} zaručuje, že při smazání uživatele se automaticky odstraní všechny jeho tréninky, a při smazání tréninku se smaží všechny přidružené cviky.
+
+Dále jsou použita NOT NULL omezení na klíčových sloupcích jako email, password\_hash, workout\_date a exercise\_name. To zabraňuje vložení neúplných dat do databáze a snižuje riziko bežhových chyb.
+
+\subsection{Indexy a výkon}
+Pro optimalizaci dotazů jsou na tabulkách definovány indexy:
+
+\begin{itemize}
+    \item Index na sloupci \texttt{user\_id} v tabulce \texttt{workouts} urychluje získávání všech tréninků daného uživatele
+    \item Index na sloupci \texttt{workout\_id} v tabulce \texttt{workout\_exercises} zlepšuje výkon při načítání detailů tréninku
+    \item Unikátní index na sloupci \texttt{email} zajistí, že v systému nemůže existovat dva uživatelé se stejnou emailovou adresou
+\end{itemize}
+
+Tyto indexy významně snižují dobu odezvy API, obzvláště při práci s větším množstvím dat.
+
+\subsection{Migrace a verzování schématu}
+Všechny zmeny databázového schématu jsou spravovány pomocí nástroje Alembic, který umožňuje vytváření migrací. Každá migrace má dvě funkce: \texttt{upgrade()} pro aplikaci změn a \texttt{downgrade()} pro jejich vrácení zpět. Díky tomu je možné bezpečně upravovat databázovou strukturu bez rizika ztráty dat, a v případě potřeby se vrátit k předchozí verzi.
+
+Pro vytvoření nové migrace stačí provést příkaz:
+
+\begin{lstlisting}[language=Python]
+flask db migrate -m "Popis zmeny"
+flask db upgrade
+\end{lstlisting}
+
+Tento přístup je obzvláště cenný v týmovém prostředí, kde více vývojářů může pracovat na různých částech aplikace.
+
+	\chapter{Implementace API rozhraní}
+    
+    Jádrem backendu je REST API, které slouží ke komunikaci s frontendem. API je navrženo tak, aby bylo bezstavové a využívalo standardní HTTP metody.
+
+    \section{Inicializace aplikace (Application Factory)}
+    Aplikace nevyužívá jednoduchou globální instanci Flask objektu, ale implementuje návrhový vzor \textit{Application Factory}. Funkce \texttt{create\_app()} vytvoří instanci aplikace, načte konfiguraci a inicializuje rozšíření (databáze, login manager). Tento přístup je klíčový pro psaní automatizovaných testů a řešení cyklických importů.
+
+    \section{API Endpointy}
+    Rozhraní je rozděleno do logických sekcí podle funkcionality.
+    
+    \subsection{Autentizační endpointy}
+    Zahrnují cesty pro registraci, přihlášení (login), odhlášení a kontrolu stavu relace. Speciální endpointy jsou vyhrazeny pro OAuth callback, který zpracovává odpověď od Google serverů.
+    
+    \subsection{Endpointy pro správu tréninků}
+    Tyto endpointy implementují CRUD operace:
+    \begin{itemize}
+        \item \texttt{GET /api/workouts} – Vrátí seznam všech tréninků přihlášeného uživatele.
+        \item \texttt{POST /api/workouts} – Vytvoří nový trénink. Přijímá JSON data s detaily.
+        \item \texttt{DELETE /api/workouts/<id>} – Smaže konkrétní trénink.
+    \end{itemize}
+
+    \section{Zpracování chyb}
+    Backend implementuje centralizované zpracování chyb. Pokud dojde k výjimce nebo je požadován neexistující zdroj, API vrátí standardizovanou JSON odpověď s popisem chyby a příslušným HTTP 
+
+\subsection{Validace vstupních dat}
+Veškerá vstupní data od klientů jsou před zpracováním validována. Například při vytváření nového tréninku musí být přítomno datum, počet serií a opakování musí být kladná čísla a váha nesmí být záporná. Validace probíhá na několika úrovních:
+
+\begin{itemize}
+    \item \textbf{Typová kontrola} – zkontroluje, zda jsou data správného datového typu
+    \item \textbf{Rozsahová kontrola} – ověřuje, zda hodnoty leží v povoleném intervalu
+    \item \textbf{Formátová kontrola} – např. email musí obsahovat znaky @ a tečku
+    \item \textbf{Logická kontrola} – datum tréninku nesmí být v budoucnosti
+\end{itemize}
+
+Při detekční chyby validace vrátí API stavový kód 400 Bad Request s podrobným popisem toho, které pole obsahuje chybu.
+\vspace{300pt}
+\subsection{API Response formáty}
+Všechny úspěšné odpovědi API mají standardní formát JSON. Objekt reprezentující trénink vypadá následovně:
+
+\begin{lstlisting}[language=Python]
+{
+  "id": 123,
+  "user_id": 42,
+  "workout_date": "2026-01-05",
+  "notes": "Silovy trenink",
+  "exercises": [
+    {
+      "exercise_name": "Bench Press",
+      "sets": 4,
+      "reps": 8,
+      "weight": 80.0
+    }
+  ]
+}
+\end{lstlisting}
+
+Tato konzistentní struktura usnadňuje zpracování dat na frontendě a snižuje riziko chyb při integraci.stavovým kódem (např. 404 Not Found, 500 Internal Server Error).
+
+    \chapter{Zabezpečení a autentizace}
+    
+    Bezpečnost uživatelských dat je kritickou prioritou. Systém využívá kombinaci tradičních a moderních metod zabezpečení.
+
+    \section{Správa hesel a relací}
+    Při klasické registraci se heslo nikdy neukládá v čitelné podobě. Je využita funkce \texttt{generate\_password\_hash} z knihovny Werkzeug, která používá algoritmus PBKDF2:SHA256 se solí (salt). Pro udržení stavu přihlášení se využívají zabezpečené session cookies spravované rozšířením Flask-Login.
+
+    \section{Integrace OAuth 2.0}
+    Pro zvýšení uživatelského komfortu a bezpečnosti je implementován protokol OAuth 2.0 přes Google.
+    
+    \subsection{Princip fungování}
+    Proces začíná přesměrováním uživatele na servery Google, kde potvrdí svou identitu. Google následně vrátí backendu autorizační kód, který je na serveru vyměněn za přístupový token. Pokud je ověření úspěšné, backend vytvoří uživateli lokální session, aniž by kdy viděl jeho Google heslo.
+
+    \section{Ochrana přístupu}
+    Přístup k citlivým endpointům (např. data o trénincích) je chráněn dekorátorem \texttt{@login\_required}. Ten ověřuje platnost session cookie před zpracováním požadavku. Dále je implementována kontrola vlastnictví dat – uživatel může manipulovat pouze s těmi tréninky, které sám vytvořil (autorizace na úrovni řádku).
+\vspace{25pt}
+\subsection{CORS a Cross-Origin Security}
+Pro umožnění komunikace mezi frontendem a backendem, které běží na různých doménách, je implementována konfigurace CORS (Cross-Origin Resource Sharing). Rozšíření Flask-CORS je nakonfigurováno tak, aby povolovalo požadavky pouze z důvěryhodných zdrojů:
+
+\begin{lstlisting}[language=Python]
+CORS(app, origins=[
+    "http://localhost:3000",
+    "https://fittrack-app.com"
+], supports_credentials=True)
+\end{lstlisting}
+
+Toto nastavení brání neoprávněným webům v přístupu k API a chrání před Cross-Site Request Forgery (CSRF) útoky.
+
+\subsection{Ochrana před SQL Injection}
+Všechny databázové dotazy jsou provaďďeny pomocí SQLAlchemy ORM, což automaticky escapuje všechny uživatelské vstupy. Místo přímé konkatenace řetězců do SQL dotazů, která je hlavní příčinou SQL injection zranitelností, používáme bezpečný přístup:
+
+\begin{lstlisting}[language=Python]
+# Bezpecny pristup s ORMWorkout.query.filter_by(user_id=user_id).all()
+
+# NEBEZPECNE - nikdy nepouzivat!
+# query = f"SELECT * FROM workouts WHERE user_id={user_id}"
+\end{lstlisting}
+
+ORM také validuje datové typy a zabraňuje vložení neoprávněného kódu.
+
+\subsection{Rate Limiting}
+Pro ochranu před DDoS útoky a brute-force pokusech o přihlášení je implementován rate limiting. Knihovna Flask-Limiter omezuje počet požadavků z jedné IP adresy:
+
+\begin{lstlisting}[language=Python]
+@app.route('/api/login', methods=['POST'])
+@limiter.limit("5 per minute")
+def login():
+    # Login logika
+\end{lstlisting}
+
+Toto nastavení povoluje maximálně 5 pokusů o přihlášení za minutu z jedné IP adresy, což významně znesnadňuje automatizované útoky na uživatelské účty.
+
+    \chapter{Testování a nasazení}
+    
+    Poslední fáze vývoje zahrnuje zajištění kvality a nasazení aplikace do provozního prostředí.
+
+    \section{Testování}
+    Pro ověření funkčnosti byly vytvořeny testovací skripty. Skript \texttt{smoke\_test.py} provádí základní kontrolu zdraví API tím, že se pokouší připojit k hlavním endpointům a ověřuje, zda vrací očekávané stavové kódy. Skript \texttt{create\_test\_data.py} slouží k naplnění databáze testovacími uživateli a tréninky pro účely vývoje.
+
+    \section{Dockerizace aplikace}
+    Soubor \texttt{Dockerfile} definuje obraz backendu. Využívá se tzv. multi-stage build nebo optimalizovaný obraz Python 3.13-slim pro minimalizaci velikosti výsledného kontejneru.
+    
+    \subsection{Orchestrace služeb}
+    Soubor \texttt{docker-compose.yml} definuje spuštění celého systému. Nastavuje síťovou komunikaci mezi backendem a frontendem, mapování portů a předávání proměnných prostředí (environment variables), jako jsou tajné klíče a přístupové údaje k databázi.
+
+
+Docker Compose také automaticky spravuje závislosti mezi službami - backend se nespustí, dokud není databáze plně inicializována. Pro vývojové prostředí je možné použít volume mounts pro live reloading kódu, což zrychluje vývojový cyklus.
+
+\subsection{Skalabilita a horizontalní škálování}
+Doňovjí architektura umožňuje snadné horizontní škálování. V prodčním prostředí lze spustit více instancí backendu za load balancerem (např. HAProxy nebo AWS ELB). Každá instance je bezstavová - session data jsou ukladána v externím úložišti (Redis nebo databáze), což umožňuje rovnoměrné rozložení požadavků.
+
+Při nárůstu počtu uživatelů je možné implementovat:
+\begin{itemize}
+    \item \textbf{Read replicas} pro databázi - čtení může být přesměrováno na replikované instance
+    \item \textbf{Caching vrstvu} - Redis pro caching často čtených dat
+PROGRAMOVACÍ JAZYK PYTHON    \item \textbf{Message queue} (Celery, RabbitMQ) pro asynchronní zpracování úloh
+\end{itemize}
+
+\subsection{Unit a integrační testy}
+Kromě základních smoke testů je implementována sada unit testů používajících knihovnu pytest. Tyto testy pokrývají hlavní funkčnosti aplikace:
+
+\begin{itemize}
+    \item \textbf{Testování databázových modelů} – ověření korektní tvorby a vztahů mezi entitami
+    \item \textbf{Testování autentizace} – ověření správného hashování hesel a OAuth toku
+    \item \textbf{Testování API endpointů} – ověření stavových kódů a JSON odpovědí
+    \item \textbf{Testování autorizační logiky} – ověření, že uživatelé vidí jen svá data
+\end{itemize}
+
+Příklad jednoduchého testu:
+
+\begin{lstlisting}[language=Python]
+def test_create_workout(client, auth_token):
+    response = client.post(
+        '/api/workouts',
+        headers={'Authorization': f'Bearer {auth_token}'},
+        json={'workout_date': '2026-01-05'}
+    )
+    assert response.status_code == 201
+    assert 'id' in response.json
+\end{lstlisting}
+
+\subsection{Continuous Integration (CI/CD)}
+Projekt využívá GitHub Actions pro automatické spuštění testů při každém commitu. Pipeline zahrnuje:
+
+\begin{enumerate}
+    \item Spuštění linteru (flake8) pro kontrolu kvality kódu
+    \item Spuštění všech unit a integračních testů
+    \item Build Docker image
+    \item Kontrola bezpečnostních zranitelností (safety check)
+    \item Při úspěšném průběhu automatic deploy do staging prostředí
+\end{enumerate}
+
+Tento přístup zajistí, že každá změna kódu je otestována před sloučením do hlavní větve a riziko zavedení chyb do produkce je minimalizováno.
+
+\subsection{Monitoring a logging}
+V produkčním prostředí je implementován systém logování používající knihovnu Python logging. Všechny důležité události jako chyby, neúspěšné pokusy o přihlášení nebo dlouhé doby odezvy jsou zaznamenávány. Pro long-term monitoring může být integrován nástroj jako Sentry nebo Prometheus, který umožňuje sledování metriky výkonu a automatické upozorňování při detekčnosti problémů.
+    \section{Produkční nasazení}
+    V produkčním prostředí není aplikace spouštěna vestavěným vývojovým serverem Flasku, který není určen pro vysokou zátěž. Místo toho se využívá robustní WSGI server \textbf{Gunicorn}, který je nakonfigurován pro obsluhu více souběžných požadavků. Jako reverzní proxy server je použit Nginx (dle souboru \texttt{nginx.conf}), který zajišťuje SSL terminaci a statické soubory.
+
+	\chapter*{Závěr}
+	\addcontentsline{toc}{chapter}{Závěr}
+	
+	Cílem backendové části projektu Fit Track bylo navrhnout, implementovat a zprovoznit spolehlivou serverovou aplikaci pro správu fitness dat. Volba technologií Python a Flask se ukázalo jako vysoce efektivní, neboť umožnila rychlý vývoj flexibilního REST API, které plně pokrývá požadavky frontendové aplikace.
+    
+    Během řešení práce se podařilo úspěšně implementovat bezpečný systém autentizace uživatelů, a to jak klasickou metodou, tak moderním způsobem přes Google OAuth 2.0. Navržený relační databázový model efektivně a logicky strukturovaně ukládá data o uživatelích, jejich trénincích a výkonech. Díky využití ORM SQLAlchemy je vrstva pro práci s daty bezpečná a snadno udržovatelná. Velkým přínosem pro projekt je také kompletní kontejnerizace pomocí Dockeru, která zajišťuje, že aplikace je připravena pro okamžité nasazení v libovolném cloudovém prostředí bez složité konfigurace serveru.
+    
+    Backend poskytuje stabilní a dokumentované rozhraní, které je připraveno na budoucí rozšiřování. Mezi možné směry dalšího vývoje patří implementace sociálních funkcí (sdílení tréninků mezi uživateli), pokročilejší analytika dat využívající strojové učení nebo vytvoření nativní mobilní aplikace využívající stávající API.
+
+\subsection*{Zhodnocení dosažených výsledků}
+Všechny stanovené cíle projektu byly úspěšně naplněny. Backend poskytuje kompletní CRUD operační funkcionalitu pro správu fitness dat, umožňuje bezpečnou autentizaci uživatelů přes OAuth 2.0 i klasickou registraci a nabízí stabilní API rozhraní pro komunikaci s frontendem. Databázová vrstva efektivně řeší relace mezi entitami a zajistí konzistenci dat.
+
+Z pohledu výkonu je aplikace připravena na produkční nasazení - kontejnerizace pomocí Dockeru umožňuje snadné škálování, implementované indexy na databázových tabulkách zlepšují dobu odezvy a pouziť WSGI serveru Gunicorn s Nginx proxy zajistí stabilitu při vyšší zátěži.
+
+\subsection*{Naučené poznatky}
+Během vývoje jsem si prohloubil znalosti v několika klíčových oblastech:
+
+\begin{itemize}
+    \item \textbf{Bezpečnostní principy webových aplikací} – Pochopení důležitosti hashování hesel, HTTPS komunikace, CORS konfigurace a ochrany před CSRF a SQL injection útoky bylo klíčové pro vytvoření bezpečného systému.
+    \item \textbf{Architektura REST API} – Naučil jsem se navrhnout konzistentní API, které dodržuje REST principy a poskytuje předvídatelné rozhraní pro frontendové aplikace.
+    \item \textbf{Databázové migrace a verzování} – Práce s Alembic ukázala, jak důležité je verzovat zmeny databázového schématu a udržovat konzistenci mezi vývojem, testovacím a produkčním prostředím.
+    \item \textbf{CI/CD principy} – Implementace automatických testů a deployment pipeline mi ukázala hodnotu automatizace a jak může snížit riziko chyb při nasazování nových verzí.
+\end{itemize}
+
+\subsection*{Možné vylepšení}
+Přestože je backend plnefunkční, existují oblasti pro budoucí zlepšení:
+
+\begin{itemize}
+    \item \textbf{Caching} – Implementace Redis cache pro často čtená data by mohla zlepšit výkon při vysokém počtu uživatelů
+    \item \textbf{Pokročilá analytika} – Pridání endpointů pro statistické vyhodnocování pokroku, grafy vývoje síly a identifikace špatných trení
+    \item \textbf{WebSocket podpora} – Real-time notifikace a synchronizace dat mezi zařízeními
+    \item \textbf{Export/import dat} – Možnost zálohování a migrace dat mezi instancemi aplikace
+\end{itemize}
+
+Backendová část projektu Fit Track představuje solidní základ pro další rozšiřování a poskytuje uživateliům bezpečnou a spolehlivý nástroj pro správu jejich fitness dat.
+
+	% OPRAVA UNDERFULL HBOX: Zarovnání bibliografie doleva pro lepší vzhled URL
+	\begingroup
+	\raggedright
+	\begin{thebibliography}{99}
+		
+		\bibitem{flaskDocs}
+		\textit{Pallets Projects}. Flask Documentation. [online]. Dostupné z: \url{https://flask.palletsprojects.com/}
+		
+		\bibitem{sqlalchemy}
+		\textit{SQLAlchemy}. The Python SQL Toolkit and Object Relational Mapper. [online]. Dostupné z: \url{https://www.sqlalchemy.org/}
+        
+        % OPRAVA MISPLACED ALIGNMENT TAB: Ampersand je escapovaný (\&)
+        \bibitem{authlib}
+		\textit{Authlib}. OAuth 2.0 \& OpenID Connect Client. [online]. Dostupné z: \url{https://docs.authlib.org/}
+		
+		\bibitem{dockerDocs}
+		\textit{Docker Documentation}. Dockerize a Python application. [online]. Dostupné z: \url{https://docs.docker.com/language/python/}
+		
+		\bibitem{python}
+		\textit{Python Software Foundation}. Python 3.13 Language Reference. [online]. Dostupné z: \url{https://www.python.org/doc/}
+        
+        \bibitem{restapi}
+        \textit{Red Hat}. What is a REST API? [online]. Dostupné z: \url{https://www.redhat.com/en/topics/api/what-is-a-rest-api}
+        
+        \bibitem{werkzeug}
+        \textit{Pallets Projects}. Werkzeug Documentation - Password Hashing. [online]. Dostupné z: \url{https://werkzeug.palletsprojects.com/en/3.0.x/utils/#module-werkzeug.security}
+
+	\end{thebibliography}
+	\endgroup
+	
+	% \listoffigures
+    
+	
+	\appendix 
+	
+	\titleformat{\chapter}[block]{\scshape\bfseries\LARGE}{Příloha \thechapter}{10pt}{\vspace{0pt}}[\vspace{-22pt}] 
+	
+\end{document}
+
+
