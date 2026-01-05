@@ -383,7 +383,7 @@ a výkonů (frontend část)} %% vyplň název své práce
 	%% Abstrakt v češtině
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	\noindent{\Large{\bfseries{Abstrakt}\\}}
-	\noindent Výsledkem projektu je funkční webová aplikace Fit Track určená pro sledování fitness cílů a detailní analýzu tréninkového pokroku. Aplikace zahrnuje bezpečnou registraci a správu uživatelských účtů, včetně možnosti zjednodušeného přihlášení přes Google OAuth. Uživatel si v intuitivním rozhraní vede osobní tréninkový deník, kde eviduje jednotlivé cviky s parametry jako jsou série, opakování a váhy. Aplikace nabízí katalog cviků pro in-spiraci a funkci, také "Rychlý start" s předpřipravenými plány pro různé úrovně pokročilos-ti. Dalsí částí pro zpětnou vazbu je analytický dashboard, který zpracovává data do interak-tivních grafů. Ty vizualizují frekvenci cvičení, objem zvednuté zátěže a celkový progres v čase. Aplikace disponuje moderním responzivním designem s tmavým motivem.
+	\noindent Výsledkem projektu je funkční webová aplikace Fit Track určená pro sledování fitness cílů a detailní analýzu tréninkového pokroku. Aplikace zahrnuje bezpečnou registraci a správu uživatelských účtů, včetně možnosti zjednodušeného přihlášení přes Google OAuth. Uživatel si v intuitivním rozhraní vede osobní tréninkový deník, kde eviduje jednotlivé cviky s parametry jako jsou série, opakování a váhy. Aplikace nabízí katalog cviků pro inspiraci a funkci, také "Rychlý start" s předpřipravenými plány pro různé úrovně pokročilosti. Dalsí částí pro zpětnou vazbu je analytický dashboard, který zpracovává data do interaktivních grafů. Ty vizualizují frekvenci cvičení, objem zvednuté zátěže a celkový progres v čase. Aplikace je postavena na frameworku Streamlit, který umožňuje vytvářet interaktivní datové aplikace v Pythonu s minimálním množstvím kódu a okamžitým náhledem v prohlížeči. Díky Streamlitu má Fit Track vícestránkové rozhraní – od tréninkového deníku přes katalog cviků až po analytický dashboard s grafy postavenými na knihovně Plotly, také disponuje moderním responzivním designem s tmavým motivem.
 
 	
 	\vspace{20pt}
@@ -398,7 +398,7 @@ a výkonů (frontend část)} %% vyplň název své práce
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
 	\noindent{\Large{\bfseries{Abstract}}}
 	
-	\noindent The result of the project is a functional web application Fit Track designed for tracking fitness goals and detailed analysis of training progress. The application includes secure registration and management of user accounts, including the option of simplified login via Google OAuth. The user keeps a personal training diary in an intuitive interface, where he records individual exercises with parameters such as sets, repetitions and weights. The application offers a catalog of exercises for inspiration and function, as well as a "Quick Start" with prepared plans for different levels of proficiency. Another part for feedback is an analytical dashboard that processes data into interactive graphs. These visualize the frequency of exercises, the volume of the load lifted and the overall progress over time. The application has a modern responsive design with a dark theme.
+	\noindent The result of the project is a functional web application Fit Track designed for tracking fitness goals and detailed analysis of training progress. The application includes secure registration and management of user accounts, including the option of simplified login via Google OAuth. The user keeps a personal training diary in an intuitive interface, where he records individual exercises with parameters such as sets, repetitions and weights. The application offers a catalog of exercises for inspiration and function, as well as a "Quick Start" with pre-prepared plans for different levels of progress. Another part for feedback is an analytical dashboard that processes data into interactive graphs. These visualize exercise frequency, volume of lifted load and overall progress over time. The application is built on the Streamlit framework, which allows you to create interactive data applications in Python with a minimum amount of code and an immediate preview in the browser. Thanks to Streamlit, Fit Track has a multi-page interface - from a training diary to an exercise catalog to an analytical dashboard with graphs built on the Plotly library. It also has a modern responsive design with a dark theme.
 
 	
 	
@@ -440,8 +440,29 @@ a výkonů (frontend část)} %% vyplň název své práce
 	\section{Zkušenosti}
 	
 	Před začátkem práce na projektu Fit Track jsem neměla s frameworkem Streamlit žádné předchozí zkušenosti. Moje dosavadní znalosti webového vývoje se omezovaly na základy HTML a CSS, případně na jednoduché skripty v Pythonu. Tvorba komplexní webové aplikace s interaktivními prvky pro mě tedy byla zcela novou výzvou. Původně jsem zvažovala použití klasických cest (např. Flask nebo Django), ale brzy jsem narazila na vysokou časovou náročnost tvorby frontendu pomocí šablon a propojování s JavaScriptem. Jako začátečník v oblasti webových aplikací jsem hledala nástroj, který by mi umožnil rychle vytvořit profesionálně vypadající rozhraní bez nutnosti hluboké znalosti frontendových frameworků. Streamlit se ukázal jako ideální volba, i když vyžadoval zcela jiný způsob přemýšlení o tom, jak webová stránka funguje.
+
+    \pagebreak
+
+    \section{Splněné cíle}
 	
+	\textbf{Splněné cíle:}
 	
+	\begin{itemize}
+		\item Vytvoření přehledného katalogu cviků: Systém umožňuje filtrování cviků podle svalových skupin pro snadnou orientaci.
+		\item Možnost sestavovat tréninkové plány: Uživatel si může z katalogu vybrat konkrétní cviky a vytvořit si vlastní tréninkovou jednotku.
+		\item Efektivní správa tréninků: Díky systému šablon a funkci „Rychlý start“ je proces záznamu tréninku maximálně zjednodušen.
+		\item Přihlášení a autentizace: Zabezpečení přístupu je realizováno modulem auth.py, který zajišťuje ochranu uživatelských dat.
+		\item Pokročilá analýza dat: Implementace interaktivních grafů v knihovně Plotly umožňuje detailní sledování progresu v sériích a opakováních.
+		\item Responzivní uživatelské rozhraní: Aplikace postavená na frameworku Streamlit je plně dostupná skrze webový prohlížeč na počítačích i mobilních zařízeních.
+        \item Integrace s REST API backendu: Frontend pomocí knihovny Requests komunikuje s Flask serverem, načítá a ukládá tréninková data přes standardizované HTTP endpointy.
+        \item Oddělené nasazení přes Docker Compose: Frontend má vlastní requirements.txt a je připraven běžet jako samostatná služba v Docker Compose, což usnadňuje nasazení a škálování.
+
+	\end{itemize}
+    \textbf{Možné vylepšit:}
+		\begin{itemize}
+		\item Detailní nahrávání videí.
+		\item Mobilní rozhraní a nativní aplikace.
+	\end{itemize}
 	
 	%Tipy k psaní úvodu
 	%Je povinný, nadpis neměňte, rozsah - max. 1 strana. 
@@ -453,8 +474,6 @@ a výkonů (frontend část)} %% vyplň název své práce
 	
 	\chapter{Využité technologie}
     \section{Python}
-	
-	Pro vývoj aplikace Fit Track jsem zvolila jazyk Python. Ačkoliv jsem s ním před začátkem projektu měla jen minimální zkušenosti, rychle se ukázal jako ideální volba pro projekt tohoto typu. Python je interpretovaný, vysokoúrovňový jazyk, který je dnes standardem v oblasti analýzy dat a webového vývoje.
     
 	\section{Streamlit}
 	
@@ -478,15 +497,8 @@ a výkonů (frontend část)} %% vyplň název své práce
 	
 	
 	\section{Vývojové prostředí}
-	\begin{itemize}
-		\item \textbf{ Visual Studio Code} – hlavní integrované vývojové prostředí používané pro psaní kódu a práci s emulátory.
-		
-	\end{itemize}
 	
 	Jako hlavní nástroj pro psaní veškerého zdrojového kódu jsem zvolila editor Visual Studio Code. Na rozdíl od frameworku Streamlit, který byl pro mě novinkou, je pro mě toto prostředí velmi známé. VS Code používám jako svůj primární nástroj již od začátku studia na střední škole, což mi umožnilo se plně soustředit na řešení logiky aplikace a neřešit ovládání samotného editoru.
-    \bigskip
-	
-	\clearpage
 	
 	\chapter{Základní struktura}
 	\label{sec:zakladni_struktura}
@@ -503,8 +515,33 @@ a výkonů (frontend část)} %% vyplň název své práce
 		\item \textbf{requirements.txt} – seznam závislostí, který je zcela zásadní pro spustitelnost aplikace; obsahuje přesný výčet Python knihoven (jako Streamlit nebo Plotly), na kterých projekt stojí
 		\item \textbf{Dockerfile} – dokument, který umožňuje aplikaci "zabalit" do Dockeru, díky čemuž ji lze spustit na jakémkoliv počítači bez složitého instalování prostředí
 	\end{itemize}
-	
-	
+
+    \section{Komunikace s backend rozhraním (API)}
+    Tato kapitola popisuje způsob, jakým frontendová část aplikace komunikuje s backendovým serverem, který vyvinul můj spolužák David Anděl, který pracoval na dokumentaci backendové části. Propojení obou částí probíhá pomocí architektury REST API.
+
+    \subsection{Architektura propojení}
+    Frontend funguje jako klient, který zasílá HTTP požadavky na specifické URL adresy (endpoynty) backendu. Komunikace probíhá asynchronně, což zajišťuje, že se uživatelské rozhraní nezasekne během čekání na odpověď ze serveru.
+
+    \subsection{Struktura API volání}
+    V zájmu čistoty kódu a udržovatelnosti jsem v projektu implementoval(a) tzv. API Service vrstvu. To znamená, že HTTP požadavky nejsou rozesety přímo v komponentách, ale jsou soustředěny v samostatných modulech.
+
+    \begin{verbatim}
+        def check_login():
+    """Check if user is logged in by calling /api/me"""
+    session = st.session_state['session']
+    try:
+        r = session.get(f"{API_BASE}/me", timeout=2)
+        if r.ok:
+            st.session_state['logged_in'] = True
+            st.session_state['user'] = _safe_json(r).get('user')
+            return True
+    except Exception:
+        pass
+    st.session_state['logged_in'] = False
+    st.session_state['user'] = None
+    return False
+    \end{verbatim}
+	\textbf{Ukázka ověření identity uživatele}
 	\section{Autentizace (Google OAuth)}
 	Jednou z klíčových funkcí frontendu je zjednodušené přihlášení. Využila jsem protokol OAuth 2.0, který uživateli umožňuje přihlásit se pomocí Google účtu. To zvyšuje bezpečnost (uživatel nemusí zadávat heslo do mé aplikace) a výrazně urychluje proces registrace.
 
@@ -518,7 +555,36 @@ a výkonů (frontend část)} %% vyplň název své práce
 	\section{Založení projektu}
 	
 	Vývoj aplikace byl zahájen přípravou virtuálního prostředí v Pythonu a instalací frameworku Streamlit. Vzhledem k mým předchozím zkušenostem z výuky probíhal veškerý vývoj v editoru Visual Studio Code. Pro správu závislostí byl vytvořen soubor requirements.txt, který definuje potřebné knihovny, jako jsou Plotly pro grafy a Requests pro propojení s API. Celý frontend je také připraven pro kontejnerizaci pomocí přiloženého Dockerfile, což zajišťuje snadné spuštění aplikace v libovolném prostředí.
-    \pagebreak
+
+    \section{Uživatelské rozhraní}
+    Uživatelské rozhraní aplikace je postaveno na frameworku Streamlit, který umožňuje skládat obrazovky z hotových komponent, jako jsou formuláře, tabulky, grafy nebo postranní panel. Aplikace využívá široké rozvržení s viditelným sidebar menu, odkud má uživatel rychlý přístup na hlavní sekce – přehledový dashboard, katalog cviků, tréninkový deník, analytické statistiky a nastavení účtu.
+
+    \begin{verbatim}
+        def render_sidebar_navigation():
+    """Render sidebar navigation for logged-in users"""
+    with st.sidebar:
+        st.markdown("""
+        <div style="text-align: center; padding: 20px 0;">
+            <span style="font-size: 2.5rem;"></span><br>
+            <span style="font-size: 1.8rem; font-weight: 800; color: #ffd700;">FitTrack</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Navigation buttons
+        current_page = st.session_state.get('page', 'dashboard')
+        
+        if st.button(" Dashboard", use_container_width=True, type="primary" if current_page == 'dashboard' else "secondary"):
+            st.session_state['page'] = 'dashboard'
+            st.rerun()
+        
+        if st.button(" Moje tréninky", use_container_width=True, type="primary" if current_page == 'workouts' else "secondary"):
+            st.session_state['page'] = 'workouts'
+            st.rerun()
+        
+    \end{verbatim}
+
     
     \section{Úvodní stránka}
 	
@@ -533,29 +599,15 @@ a výkonů (frontend část)} %% vyplň název své práce
 	\end{figure}
     \pagebreak
 	
-	\section{Autentizace a autorizace}
 	
-	Autentizace uživatelů je implementována v modulu auth.py. Aplikace umožňuje uživatelům bezpečné přihlášení, přičemž je kladen důraz na ochranu dat – každý sportovec má přístup pouze k vlastním záznamům. Po úspěšném ověření jsou přihlašovací údaje a tokeny uloženy v rámci \textttst{.session\_state}, což umožňuje aplikaci udržet uživatele přihlášeného i při pohybu mezi jednotlivými podstránkami, jako je deník tréninků nebo statistiky.
-
-    \vspace{18pt}
-	\begin{figure}[h!]
-		\centering
-		\includegraphics[width=0.9\textwidth]{image/auth.png}
-		\caption{Proces autentizace uživatele v aplikaci Fit Track}
-		\label{fig:autentizace}
-	\end{figure}
-	
-	\pagebreak
-	
-	
-	\section{Uživatelské rozhraní}
+	\section{Hlavní přehled}
 	
 	Po úspěšném přihlášení je uživatel přesměrován na hlavní přehledovou stránku (Dashboard), která slouží jako centrální uzel aplikace. Tato část byla navržena tak, aby poskytovala okamžitou zpětnou vazbu o aktivitě uživatele bez nutnosti složitého vyhledávání.
     
 	\begin{itemize}
-		\item navigační panel (Sidebar)
-		\item přehledové metriky
-		\item šablony tréninků a Rychlý start
+		\item Navigační panel (Sidebar).
+		\item Přehledové metriky.
+		\item Šablony tréninků a Rychlý start.
 	\end{itemize}
 	\vspace{18pt}
 	\begin{figure}[h!]
@@ -590,7 +642,7 @@ a výkonů (frontend část)} %% vyplň název své práce
 	
 	Grafy jsou plně interaktivní, což znamená, že uživatel může po najetí kurzorem na jednotlivé sloupce vidět přesné číselné hodnoty. Vizuální styl grafů byl upraven tak, aby doplňoval tmavý motiv aplikace – sloupce využívají modré odstíny, které jsou dobře čitelné na černém pozadí dashboardu.
 
-	\pagebreak
+
 
     	\section{Úspěchy}
 	
@@ -603,17 +655,16 @@ a výkonů (frontend část)} %% vyplň název své práce
 		\caption{Úspěchy}
 		\label{fig:uspechy}
 	\end{figure}
-	
-	\pagebreak
+	    \pagebreak
     
 	\section{Katalog cviků}
 	
 	Jednou z klíčových komponent pro usnadnění uživatelské zkušenosti je Katalog cviků, který slouží jako rozsáhlá databáze znalostí v rámci aplikace. Tato část umožňuje uživatelům nejen prohlížet dostupné cviky, ale také aktivně sestavovat vlastní tréninkové jednotky.
 	
 	\begin{itemize}
-		\item multiselect výběr
-		\item akční tlačítka
-		\item správa výběru
+		\item Multiselect výběr.
+		\item Akční tlačítka.
+		\item Správa výběru.
 	\end{itemize}
 	
 	\begin{figure}[h!]
@@ -622,40 +673,36 @@ a výkonů (frontend část)} %% vyplň název své práce
 		\caption{Katalog}
 		\label{fig:katalog}
 	\end{figure}
+    
 	
 	\section{Záznamy tréninků}
 	
 	Uživatel může vytvářet nové záznamy, ukládat jejich průběh v reálném čase a zpětně k nim přistupovat skrze historii. Pro maximální efektivitu v posilovně jsem implementovala systém šablon (např. Push Day, Pull Day), které umožňují rychlý start tréninku bez nutnosti ručního zadávání každého cviku. Každý záznam tréninku v databázi obsahuje detailní informace o vykonaných cvicích, včetně počtu sérií, opakování a použité zátěže.
 
+    \pagebreak
+
+    	\section{Autentizace a autorizace}
 	
-	\chapter{Výsledky řešení, výstupy a uživatelský manuál}
+	Autentizace uživatelů je implementována v modulu auth.py. Aplikace umožňuje uživatelům bezpečné přihlášení, přičemž je kladen důraz na ochranu dat – každý sportovec má přístup pouze k vlastním záznamům. Po úspěšném ověření jsou přihlašovací údaje a tokeny uloženy v rámci \textttst{.session\_state}, což umožňuje aplikaci udržet uživatele přihlášeného i při pohybu mezi jednotlivými podstránkami, jako je deník tréninků nebo statistiky.
+    \vspace{18pt}
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.9\textwidth]{image/auth.png}
+		\caption{Proces autentizace uživatele v aplikaci Fit Track}
+		\label{fig:autentizace}
+	\end{figure}
+	
+	\pagebreak
+
+	
+	\chapter{Výsledky řešení a závěr}
 	
 	\section{Výsledné řešení}
 	
 	Výsledkem práce je funkční webová aplikace FitTrack, která slouží jako moderní tréninkový deník pro záznam a analýzu fitness aktivit.
 	
-	\section{Splněné a nesplněné cíle}
 	
-	\textbf{Splněné cíle:}
-	
-	\begin{itemize}
-		\item Vytvoření přehledného katalogu cviků: Systém umožňuje filtrování cviků podle svalových skupin pro snadnou orientaci.
-		\item Možnost sestavovat tréninkové plány: Uživatel si může z katalogu vybrat konkrétní cviky a vytvořit si vlastní tréninkovou jednotku.
-		\item Efektivní správa tréninků: Díky systému šablon a funkci „Rychlý start“ je proces záznamu tréninku maximálně zjednodušen.
-		\item Přihlášení a autentizace: Zabezpečení přístupu je realizováno modulem auth.py, který zajišťuje ochranu uživatelských dat.
-		\item Pokročilá analýza dat: Implementace interaktivních grafů v knihovně Plotly umožňuje detailní sledování progresu v sériích a opakováních.
-		\item Responzivní uživatelské rozhraní: Aplikace postavená na frameworku Streamlit je plně dostupná skrze webový prohlížeč na počítačích i mobilních zařízeních.
-	\end{itemize}
-	
-	\textbf{Nesplněné cíle a možné rozšíření:}
-	
-	\begin{itemize}
-		\item Detailní nahrávání videí
-		\item Mobilní rozhraní a nativní aplikace
-	\end{itemize}
-	
-	
-	\chapter*{Závěr}
+	\section{Závěr}
 	\addcontentsline{toc}{chapter}{Závěr}
 	
 Cílem této závěrečné práce bylo navrhnout a realizovat webovou aplikaci FitTrack, která poskytuje moderní a přehledné prostředí pro digitální správu tréninkového deníku a analýzu sportovních výkonů. Na základě provedené analýzy potřeb sportovců a následného návrhu v prostředí Visual Studio Code vznikla aplikace postavená na jazyce Python a frameworku Streamlit.
@@ -708,6 +755,8 @@ Výsledné řešení splňuje většinu stanovených požadavků, zejména v obl
 	\appendix %% začínají přílohy
 	
 	\titleformat{\chapter}[block]{\scshape\bfseries\LARGE}{Příloha \thechapter}{10pt}{\vspace{0pt}}[\vspace{-22pt}] %% nastavení nadpisu u příloh
+
+    Výsledná aplikace zde: \url{https://github.com/Bara2222/fittrack}
 	
 	
 	
