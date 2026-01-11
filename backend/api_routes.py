@@ -117,37 +117,7 @@ def login():
         return jsonify({'ok': False, 'error': 'Došlo k chybě při přihlašování. Zkuste to prosím znovu.'}), 500
 
 
-
-@api_bp.route('/oauth/session', methods=['POST'])
-def create_oauth_session():
-    """Create a server-side session for a given user_id (used by frontend OAuth callback).
-
-    This endpoint allows the frontend to ask the backend to call Flask-Login's
-    `login_user()` for the provided user id so the backend sets the session cookie
-    and subsequent `/me` requests succeed.
-    """
-    try:
-        data = request.get_json() or {}
-        user_id = data.get('user_id')
-        if user_id is None:
-            return _json_err('user_id is required', 400)
-
-        # Accept numeric or string IDs
-        try:
-            user_id_int = int(user_id)
-        except Exception:
-            return _json_err('Invalid user_id', 400)
-
-        user = User.query.get(user_id_int)
-        if not user:
-            return _json_err('User not found', 404)
-
-        login_user(user)
-        logger.info(f'OAuth session created for user id: {user_id_int}')
-        return jsonify({'ok': True, 'user': user.to_dict(include_sensitive=True)})
-    except Exception as e:
-        logger.error(f'Error creating oauth session: {str(e)}')
-        return jsonify({'ok': False, 'error': 'Failed to create session'}), 500
+# REMOVED DUPLICATE: /oauth/session route (kept the better one at line ~575)
 
 
 @api_bp.route('/logout', methods=['POST'])
@@ -667,6 +637,9 @@ def google_login():
 @api_bp.route('/google/callback', methods=['GET'])
 def google_callback():
     """Handle Google OAuth callback - Manual implementation"""
+    # Log immediately to see if we even get here
+    print('=== GOOGLE CALLBACK STARTED ===', flush=True)
+    
     try:
         from flask import request, session
         
@@ -675,21 +648,36 @@ def google_callback():
         state = request.args.get('state')
         error = request.args.get('error')
         
+        print(f'Google callback params: code={bool(code)}, state={bool(state)}, error={error}', flush=True)
+        logger.info(f'Google callback received: code={bool(code)}, state={bool(state)}, error={error}')
+        
         # Check for OAuth errors
         if error:
+            print(f'=== ERROR IN PARAMS: {error} ===', flush=True)
             frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
             return redirect(f'{frontend_url}/?auth=error&msg={error}')
         
         if not code:
+            print(f'=== NO CODE ===', flush=True)
             frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
             return redirect(f'{frontend_url}/?auth=error&msg=No+authorization+code+received')
         
         # Verify state parameter (CSRF protection)
-        stored_state = session.get('oauth_state')
+        print(f'=== CHECKING STATE ===', flush=True)
+        
+        try:
+            stored_state = session.get('oauth_state')
+            print(f'=== STORED STATE: {stored_state}, RECEIVED STATE: {state} ===', flush=True)
+        except Exception as e:
+            print(f'=== EXCEPTION GETTING SESSION: {e} ===', flush=True)
+            raise
+        
         if not stored_state or stored_state != state:
+            print(f'=== STATE MISMATCH! ===', flush=True)
             frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
             return redirect(f'{frontend_url}/?auth=error&msg=Invalid+state+parameter')
         
+        print(f'=== STATE OK, CLEARING ===', flush=True)
         # Clear the state from session
         session.pop('oauth_state', None)
         
@@ -697,8 +685,26 @@ def google_callback():
         import requests
         from backend.oauth import oauth
         
+        print(f'=== OAUTH OBJECT: {oauth} ===', flush=True)
+        print(f'=== HAS GOOGLE: {hasattr(oauth, "google") if oauth else False} ===', flush=True)
+        
+        logger.info('Exchanging authorization code for token...')
+        
+        # Check if OAuth is configured
+        if oauth is None:
+            logger.error('OAuth not configured!')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg=OAuth+not+configured')
+        
+        if not hasattr(oauth, 'google'):
+            logger.error('OAuth google client not registered!')
+            frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
+            return redirect(f'{frontend_url}/?auth=error&msg=OAuth+google+not+configured')
+        
         token_url = 'https://oauth2.googleapis.com/token'
         redirect_uri = url_for('api.google_callback', _external=True)
+        
+        logger.info(f'=== REDIRECT_URI: {redirect_uri} ===')
         
         token_data = {
             'client_id': oauth.google.client_id,
@@ -708,11 +714,17 @@ def google_callback():
             'redirect_uri': redirect_uri,
         }
         
+        logger.info(f'=== TOKEN REQUEST: client_id={token_data["client_id"]}, redirect_uri={token_data["redirect_uri"]}, grant_type={token_data["grant_type"]}, code_length={len(code)} ===')
+        
         token_response = requests.post(token_url, data=token_data)
         token_json = token_response.json()
         
+        logger.info(f'Token response status: {token_response.status_code}')
+        logger.info(f'=== TOKEN RESPONSE BODY: {token_json} ===')
+        
         if not token_response.ok:
             error_msg = token_json.get('error_description', 'Token exchange failed')
+            logger.error(f'Token exchange failed: {error_msg}')
             frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
             return redirect(f'{frontend_url}/?auth=error&msg={error_msg}')
         
@@ -728,13 +740,18 @@ def google_callback():
         userinfo_response = requests.get(userinfo_url)
         userinfo = userinfo_response.json()
         
+        print(f'=== USERINFO RESPONSE: status={userinfo_response.status_code} ===', flush=True)
+        
         if not userinfo_response.ok:
+            logger.error(f'Failed to get userinfo: {userinfo}')
             frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
             return redirect(f'{frontend_url}/?auth=error&msg=Failed+to+get+user+info')
         
         sub = userinfo.get('id')  # Google uses 'id' field
         email = userinfo.get('email')
         name = userinfo.get('name') or (email.split('@')[0] if email else f'user_{sub[:6]}')
+        
+        logger.info(f'Google user info: email={email}, name={name}, sub={sub[:10] if sub else None}...')
         
         # Find or create user
         user = User.query.filter(
@@ -745,6 +762,7 @@ def google_callback():
             user = User.query.filter_by(email=email).first()
         
         if not user:
+            logger.info(f'Creating new user for Google OAuth: {name}')
             user = User(
                 username=name,
                 email=email,
@@ -754,17 +772,25 @@ def google_callback():
             )
             db.session.add(user)
             db.session.commit()
+            logger.info(f'New user created: {user.id}')
         
         login_user(user)
-        logger.info(f'Google OAuth login: {user.username}')
+        logger.info(f'Google OAuth login successful: {user.username} (id={user.id})')
+        print(f'=== LOGIN_USER CALLED for user {user.id} ===', flush=True)
         
         frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
-        return redirect(f'{frontend_url}/?auth=success&user_id={user.id}')
+        redirect_url = f'{frontend_url}/?auth=success&user_id={user.id}'
+        print(f'=== REDIRECTING TO: {redirect_url} ===', flush=True)
+        logger.info(f'Redirecting to: {redirect_url}')
+        return redirect(redirect_url)
     
     except Exception as e:
+        print(f'=== GOOGLE CALLBACK EXCEPTION: {str(e)} ===', flush=True)
         logger.error(f'Google callback error: {str(e)}')
         import traceback
-        logger.error(f'Traceback: {traceback.format_exc()}')
+        traceback_str = traceback.format_exc()
+        print(f'Traceback:\n{traceback_str}', flush=True)
+        logger.error(f'Traceback: {traceback_str}')
         frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:8501')
         return redirect(f'{frontend_url}/?auth=error&msg={str(e)}')
 

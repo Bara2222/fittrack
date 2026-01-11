@@ -862,7 +862,8 @@ def goals_page():
                         'completed': False,
                         'created': datetime.now().strftime('%d.%m.%Y')
                     })
-                    st.success(f"✅ Cíl '{goal_name}' byl úspěšně vytvořen!")
+                    # Show success message before rerun
+                    st.toast(f"✅ Cíl '{goal_name}' byl úspěšně vytvořen! 🎯", icon="✅")
                     st.rerun()
                 else:
                     st.error("Vyplňte prosím název cíle a cílovou hodnotu!")

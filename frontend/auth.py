@@ -110,19 +110,6 @@ def check_oauth_callback():
             if isinstance(user_id, list):
                 user_id = user_id[0] if user_id else None
             
-            # Clear query params first
-            try:
-                # Try newer API first
-                st.query_params.clear()
-            except AttributeError:
-                # Fallback to experimental for older Streamlit
-                try:
-                    st.experimental_set_query_params()
-                except Exception:
-                    pass
-            except Exception:
-                pass
-            
             # If we have user_id, set up session via API
             if user_id:
                 session = st.session_state['session']
@@ -171,16 +158,46 @@ def check_oauth_callback():
                         st.success('Přihlášení přes Google úspěšné!')
                         st.rerun()
                         return
+                    else:
+                        print(f"[OAuth] Failed to create session: {r.status_code}")
+                        st.error('Nepodařilo se vytvořit session. Zkuste to prosím znovu.')
+                        # Clear query params
+                        try:
+                            st.experimental_set_query_params()
+                        except AttributeError:
+                            try:
+                                st.query_params.clear()
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+                        return
+                except Exception as e:
+                    print(f"[OAuth] Exception during session creation: {e}")
+                    st.error(f'Chyba při vytváření session: {str(e)}')
+                    # Clear query params
+                    try:
+                        st.experimental_set_query_params()
+                    except AttributeError:
+                        try:
+                            st.query_params.clear()
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
+                    return
+            else:
+                st.error('OAuth callback neobsahoval user_id.')
+                # Clear query params
+                try:
+                    st.experimental_set_query_params()
+                except AttributeError:
+                    try:
+                        st.query_params.clear()
+                    except Exception:
+                        pass
                 except Exception:
                     pass
-            
-            # Fallback - try to check login status normally
-            if check_login():
-                st.session_state['logged_in'] = True
-                st.success('Přihlášení přes Google úspěšné!')
-                st.rerun()
-            else:
-                st.error('OAuth přihlášení bylo úspěšné, ale nepodařilo se načíst uživatelské údaje.')
                 
         elif auth_val == 'error':
             msg = query_params.get('msg')

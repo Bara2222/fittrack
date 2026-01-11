@@ -50,7 +50,7 @@ GLOBAL_CSS = r"""
 }
 
 /* Global styles */
-html, body, [class*='css'] { 
+html, body { 
     font-family: 'Poppins', sans-serif !important; 
     color: var(--text-primary) !important; 
     background: var(--bg) !important;
@@ -78,10 +78,7 @@ div:has-text("Running") {
     display: none !important;
 }
 
-/* Additional selectors for running status */
-.stAlert {
-    display: none !important;
-}
+/* REMOVED: .stAlert - was hiding success/error messages */
 
 .running-text {
     display: none !important;
@@ -92,10 +89,7 @@ div[data-testid="toastContainer"] {
     display: none !important;
 }
 
-/* Hide any status messages in general */
-div[class*="status"] {
-    display: none !important;
-}
+/* REMOVED: div[class*="status"] - was hiding success/error messages */
 
 /* Force hide elements with "Running" in text content */
 div:contains("Running") {

@@ -50,12 +50,7 @@ st.markdown("""
 div[data-testid="stStatusWidget"] {
     display: none !important;
 }
-.stToast {
-    display: none !important;
-}
-div[data-testid="stToastContainer"] {
-    display: none !important;
-}
+/* REMOVED: .stToast and stToastContainer - allows success/error messages to show */
 /* Hide elements containing "Running" text */
 div:contains("Running get_user") {
     display: none !important;
@@ -63,9 +58,7 @@ div:contains("Running get_user") {
 div[class*="status"]:contains("Running") {
     display: none !important;
 }
-.element-container:has([data-testid="stAlert"]) {
-    display: none !important;
-}
+/* REMOVED: .element-container:has([data-testid="stAlert"]) - was hiding success/error messages */
 </style>
 """, unsafe_allow_html=True)
 
