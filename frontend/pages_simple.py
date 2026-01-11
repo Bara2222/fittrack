@@ -322,28 +322,61 @@ def export_page():
     """Data export page"""
     st.markdown('<div class="main-header">📥 Export dat</div>', unsafe_allow_html=True)
     
-    st.info("💡 Exportujte svá tréninkové data do CSV formátu pro další analýzu.")
+    st.info("💡 Exportujte svá tréninkové data do CSV nebo Excel formátu pro další analýzu.")
     
     session = st.session_state['session']
     
-    if st.button("📥 Stáhnout CSV", use_container_width=True, type="primary"):
-        with st.spinner("Generuji export..."):
-            try:
-                r = session.get(f"{API_BASE}/export/csv", timeout=10)
-                if r.ok:
-                    # Offer download
-                    st.download_button(
-                        label="💾 Uložit soubor",
-                        data=r.content,
-                        file_name="fittrack_export.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
-                    st.success("✅ Export připraven ke stažení!")
-                else:
-                    _display_api_error(r, "Export dat")
-            except Exception as e:
-                st.error(f"❌ Chyba při exportu: {str(e)}")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 📊 Excel Export (Doporučeno)")
+        st.markdown("Krásně formátovaný Excel soubor s automatickou šířkou sloupců a barevným designem.")
+        
+        if st.button("📥 Stáhnout Excel (.xlsx)", use_container_width=True, type="primary"):
+            with st.spinner("Generuji Excel export..."):
+                try:
+                    r = session.get(f"{API_BASE}/export/excel", timeout=15)
+                    if r.ok:
+                        st.download_button(
+                            label="💾 Uložit Excel soubor",
+                            data=r.content,
+                            file_name="fittrack_export.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+                        st.success("✅ Excel export připraven ke stažení!")
+                    else:
+                        _display_api_error(r, "Excel export")
+                except Exception as e:
+                    st.error(f"❌ Chyba při exportu: {str(e)}")
+    
+    with col2:
+        st.markdown("### 📄 CSV Export")
+        st.markdown("Jednoduchý CSV soubor pro import do jiných aplikací.")
+        
+        if st.button("📥 Stáhnout CSV", use_container_width=True):
+            with st.spinner("Generuji CSV export..."):
+                try:
+                    r = session.get(f"{API_BASE}/export/csv", timeout=10)
+                    if r.ok:
+                        # Get CSV content with proper encoding
+                        csv_content = r.content.decode('utf-8')
+                        
+                        # Offer download with UTF-8 BOM for Excel compatibility
+                        csv_with_bom = '\ufeff' + csv_content
+                        
+                        st.download_button(
+                            label="💾 Uložit CSV soubor",
+                            data=csv_with_bom.encode('utf-8'),
+                            file_name="fittrack_export.csv",
+                            mime="text/csv",
+                            use_container_width=True
+                        )
+                        st.success("✅ CSV export připraven ke stažení!")
+                    else:
+                        _display_api_error(r, "CSV export")
+                except Exception as e:
+                    st.error(f"❌ Chyba při exportu: {str(e)}")
     
     st.markdown("---")
     st.markdown("### 📊 Co export obsahuje?")
@@ -351,4 +384,10 @@ def export_page():
     - **Tréninky**: Datum, název, poznámky
     - **Cviky**: Název cviku, série, opakování, váha
     - **Statistiky**: Celkový objem, počet tréninků
+    
+    💡 **Excel formát obsahuje:**
+    - ✨ Automaticky upravené šířky sloupců
+    - 🎨 Barevné záhlaví (zlaté)
+    - 📊 Střídavé barvy řádků pro lepší čitelnost
+    - 📐 Ohraničené buňky
     """)

@@ -481,7 +481,8 @@ def export_csv():
     """Export user workouts to CSV"""
     try:
         si = io.StringIO()
-        writer = csv.writer(si)
+        # Use semicolon delimiter for Czech Excel compatibility
+        writer = csv.writer(si, delimiter=';', quoting=csv.QUOTE_MINIMAL)
         
         # CSV headers (Czech)
         writer.writerow(['ID', 'Datum', 'Poznámka', 'Cvik', 'Série', 'Opakování', 'Váha (kg)'])
@@ -502,11 +503,157 @@ def export_csv():
                 ])
         
         csv_data = si.getvalue()
-        logger.info(f'CSV export for user {current_user.username}')
-        return jsonify({'ok': True, 'csv': csv_data})
+        logger.info(f'CSV export for user {current_user.username}: {len(workouts)} workouts')
+        
+        # Return CSV as proper response with correct headers
+        from flask import Response
+        return Response(
+            csv_data,
+            mimetype='text/csv',
+            headers={
+                'Content-Disposition': 'attachment; filename=fittrack_export.csv',
+                'Content-Type': 'text/csv; charset=utf-8'
+            }
+        )
     
     except Exception as e:
         logger.error(f'CSV export error: {str(e)}')
+        return jsonify({'ok': False, 'error': 'Export failed'}), 500
+
+
+@api_bp.route('/export/excel', methods=['GET'])
+@login_required
+def export_excel():
+    """Export user workouts to Excel with styling"""
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+        import tempfile
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Tréninky"
+        
+        # Headers (bez ID)
+        headers = ['Datum', 'Trénink', 'Cvik', 'Série', 'Opakování', 'Váha (kg)']
+        ws.append(headers)
+        
+        # Style header row
+        header_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+        header_font = Font(bold=True, size=12, color="000000")
+        
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Get workouts
+        workouts = Workout.query.filter_by(user_id=current_user.id)\
+            .order_by(Workout.date.desc()).all()
+        
+        # Add data rows grouped by workout
+        row_num = 2
+        workout_separator_fill = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
+        workout_header_font = Font(bold=True, size=11, color="FFFFFF")
+        
+        for workout_idx, workout in enumerate(workouts):
+            # Add workout header row (separator)
+            workout_header = f"🏋️ {workout.note or 'Trénink'}"
+            ws.append([workout.date.strftime('%d.%m.%Y'), workout_header, '', '', '', ''])
+            
+            # Style workout header
+            for col_num in range(1, 7):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.fill = workout_separator_fill
+                cell.font = workout_header_font
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+            
+            # Merge cells for workout header (columns B-F)
+            ws.merge_cells(f'B{row_num}:F{row_num}')
+            
+            row_num += 1
+            
+            # Add exercises for this workout
+            for exercise in workout.exercises:
+                ws.append([
+                    '',  # Empty datum (zobrazeno už v headeru)
+                    '',  # Empty trénink
+                    f"  • {exercise.name}",  # Odsazený cvik
+                    exercise.sets,
+                    exercise.reps,
+                    exercise.weight if exercise.weight else ''
+                ])
+                
+                # Style exercise row
+                for col_num in range(1, 7):
+                    cell = ws.cell(row=row_num, column=col_num)
+                    cell.alignment = Alignment(horizontal='left', vertical='center')
+                    
+                    # Light background for exercises
+                    cell.fill = PatternFill(start_color="F9F9F9", end_color="F9F9F9", fill_type="solid")
+                
+                row_num += 1
+            
+            # Add empty row between workouts (except last)
+            if workout_idx < len(workouts) - 1:
+                ws.append(['', '', '', '', '', ''])
+                row_num += 1
+        
+        # Auto-adjust column widths
+        column_widths = {
+            'A': 12,  # Datum
+            'B': 35,  # Trénink/Poznámka
+            'C': 30,  # Cvik
+            'D': 8,   # Série
+            'E': 12,  # Opakování
+            'F': 12   # Váha
+        }
+        
+        for col, width in column_widths.items():
+            ws.column_dimensions[col].width = width
+        
+        # Add borders (only to non-empty cells)
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        for row in ws.iter_rows(min_row=1, max_row=row_num-1, min_col=1, max_col=6):
+            for cell in row:
+                if cell.value:  # Only add border if cell has content
+                    cell.border = thin_border
+        
+        # Save to temporary file
+        tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+        wb.save(tmp_file.name)
+        tmp_file.close()
+        
+        # Read file and return
+        with open(tmp_file.name, 'rb') as f:
+            excel_data = f.read()
+        
+        import os
+        os.unlink(tmp_file.name)
+        
+        logger.info(f'Excel export for user {current_user.username}: {len(workouts)} workouts')
+        
+        from flask import Response
+        return Response(
+            excel_data,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={
+                'Content-Disposition': 'attachment; filename=fittrack_export.xlsx',
+            }
+        )
+    
+    except Exception as e:
+        logger.error(f'Excel export error: {str(e)}')
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'ok': False, 'error': 'Export failed'}), 500
 
 
